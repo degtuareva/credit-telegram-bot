@@ -1,11 +1,12 @@
 telegram:
   bot:
     username: credit_olga_telegram_bot
-    token: 8731688042:AAGr5Ibp-N1S656vpClWdQ0bNqP3xfOkfcI
+    token: ${TELEGRAM_BOT_TOKEN}
+
 
   manager-password: "OlgaManager2026!"
   manager-ids:
-    - 539942281
+    - 123456789
 
 
 
