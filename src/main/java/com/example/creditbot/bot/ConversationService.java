@@ -8,14 +8,10 @@ import java.util.concurrent.ConcurrentHashMap;
 @Service
 public class ConversationService {
 
-    private final Map<Long, UserSession> sessions =
-            new ConcurrentHashMap<>();
+    private final Map<Long, UserSession> sessions = new ConcurrentHashMap<>();
 
     public UserSession getSession(long userId) {
-        return sessions.computeIfAbsent(
-                userId,
-                id -> new UserSession()
-        );
+        return sessions.computeIfAbsent(userId, id -> new UserSession());
     }
 
     public void clear(long userId) {

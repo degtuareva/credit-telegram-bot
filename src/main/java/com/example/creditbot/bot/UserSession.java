@@ -51,4 +51,12 @@ public class UserSession {
     public void setPaymentType(PaymentType paymentType) {
         this.paymentType = paymentType;
     }
+
+    public void reset() {
+        step = ConversationStep.NONE;
+        amount = null;
+        termMonths = 0;
+        annualRate = null;
+        paymentType = null;
+    }
 }
