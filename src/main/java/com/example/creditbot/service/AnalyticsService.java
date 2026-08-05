@@ -24,25 +24,7 @@ public class AnalyticsService {
         return repository.findAll().size();
     }
 
-    public List<CreditRequest> filter(
-            BigDecimal minAmount,
-            BigDecimal maxAmount,
-            PaymentType paymentType
-    ) {
-        return repository.findAll().stream()
-                .filter(request ->
-                        minAmount == null ||
-                                request.amount().compareTo(minAmount) >= 0)
-                .filter(request ->
-                        maxAmount == null ||
-                                request.amount().compareTo(maxAmount) <= 0)
-                .filter(request ->
-                        paymentType == null ||
-                                request.paymentType() == paymentType)
-                .toList();
-    }
-
-    public Map<PaymentType, Long> popularPaymentTypes() {
+    public Map<PaymentType, Long> paymentTypeStats() {
         return repository.findAll().stream()
                 .collect(Collectors.groupingBy(
                         CreditRequest::paymentType,
@@ -50,7 +32,7 @@ public class AnalyticsService {
                 ));
     }
 
-    public Map<Integer, Long> popularTerms() {
+    public Map<Integer, Long> termStats() {
         return repository.findAll().stream()
                 .collect(Collectors.groupingBy(
                         CreditRequest::termMonths,
@@ -58,12 +40,23 @@ public class AnalyticsService {
                 ));
     }
 
-    public Map<BigDecimal, Long> popularAmounts() {
+    public Map<BigDecimal, Long> amountStats() {
         return repository.findAll().stream()
-                .map(CreditRequest::amount)
                 .collect(Collectors.groupingBy(
-                        Function.identity(),
+                        CreditRequest::amount,
                         Collectors.counting()
                 ));
+    }
+
+    public List<CreditRequest> filter(
+            BigDecimal minAmount,
+            BigDecimal maxAmount,
+            PaymentType paymentType
+    ) {
+        return repository.findAll().stream()
+                .filter(request -> minAmount == null || request.amount().compareTo(minAmount) >= 0)
+                .filter(request -> maxAmount == null || request.amount().compareTo(maxAmount) <= 0)
+                .filter(request -> paymentType == null || request.paymentType() == paymentType)
+                .toList();
     }
 }

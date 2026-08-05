@@ -5,6 +5,7 @@ import com.example.creditbot.calculator.PaymentCalculatorFactory;
 import com.example.creditbot.domain.CreditRequest;
 import com.example.creditbot.domain.CreditSchedule;
 import com.example.creditbot.repository.CreditRequestRepository;
+import com.example.creditbot.validation.CreditRequestValidator;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
@@ -14,19 +15,24 @@ public class CreditService {
 
     private final CreditRequestRepository repository;
     private final PaymentCalculatorFactory calculatorFactory;
+    private final CreditRequestValidator validator;
 
     public CreditService(
             CreditRequestRepository repository,
-            PaymentCalculatorFactory calculatorFactory
+            PaymentCalculatorFactory calculatorFactory,
+            CreditRequestValidator validator
     ) {
         this.repository = repository;
         this.calculatorFactory = calculatorFactory;
+        this.validator = validator;
     }
 
     public CreditSchedule calculateAndSave(CreditRequest request) {
+        validator.validate(request);
+
         CreditRequest savedRequest = repository.save(
                 new CreditRequest(
-                        0,
+                        0L,
                         request.telegramUserId(),
                         request.amount(),
                         request.termMonths(),
@@ -37,9 +43,7 @@ public class CreditService {
         );
 
         PaymentCalculator calculator =
-                calculatorFactory.getCalculator(
-                        savedRequest.paymentType()
-                );
+                calculatorFactory.getCalculator(savedRequest.paymentType());
 
         return calculator.calculate(savedRequest);
     }

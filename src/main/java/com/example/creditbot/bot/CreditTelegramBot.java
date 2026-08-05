@@ -4,7 +4,9 @@ import com.example.creditbot.domain.CreditRequest;
 import com.example.creditbot.domain.CreditSchedule;
 import com.example.creditbot.domain.Payment;
 import com.example.creditbot.domain.PaymentType;
+import com.example.creditbot.service.AnalyticsService;
 import com.example.creditbot.service.CreditService;
+import com.example.creditbot.service.HistoryService;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 import org.telegram.telegrambots.client.okhttp.OkHttpTelegramClient;
@@ -18,6 +20,9 @@ import org.telegram.telegrambots.meta.generics.TelegramClient;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
 
 @Component
 public class CreditTelegramBot implements SpringLongPollingBot, LongPollingSingleThreadUpdateConsumer {
@@ -26,16 +31,22 @@ public class CreditTelegramBot implements SpringLongPollingBot, LongPollingSingl
     private final String botToken;
     private final ConversationService conversationService;
     private final CreditService creditService;
+    private final HistoryService historyService;
+    private final AnalyticsService analyticsService;
 
     public CreditTelegramBot(
             @Value("${telegram.bot.token}") String botToken,
             ConversationService conversationService,
-            CreditService creditService
+            CreditService creditService,
+            HistoryService historyService,
+            AnalyticsService analyticsService
     ) {
         this.botToken = botToken;
         this.telegramClient = new OkHttpTelegramClient(botToken);
         this.conversationService = conversationService;
         this.creditService = creditService;
+        this.historyService = historyService;
+        this.analyticsService = analyticsService;
     }
 
     @Override
@@ -75,24 +86,25 @@ public class CreditTelegramBot implements SpringLongPollingBot, LongPollingSingl
         switch (text) {
             case "/start" -> sendMessage(chatId,
                     """
-                            Привет! Я бот для расчёта графика погашения кредита.
+                    Привет! Я бот для расчёта графика погашения кредита.
 
-                            Команды:
-                            /calculate — начать расчёт
-                            /history — история запросов
-                            /help — помощь
-                            """);
+                    Команды:
+                    /calculate — начать расчёт
+                    /history — история ваших запросов
+                    /analytics — аналитика для менеджера
+                    /help — помощь
+                    """);
 
             case "/help" -> sendMessage(chatId,
                     """
-                            Как пользоваться ботом:
+                    Как пользоваться ботом:
 
-                            1. Отправьте /calculate
-                            2. Введите сумму кредита
-                            3. Введите срок в месяцах
-                            4. Введите годовую ставку
-                            5. Выберите тип платежа
-                            """);
+                    1. Отправьте /calculate
+                    2. Введите сумму кредита
+                    3. Введите срок в месяцах
+                    4. Введите годовую ставку
+                    5. Выберите тип платежа
+                    """);
 
             case "/calculate" -> {
                 session.reset();
@@ -100,7 +112,9 @@ public class CreditTelegramBot implements SpringLongPollingBot, LongPollingSingl
                 sendMessage(chatId, "Введите сумму кредита:");
             }
 
-            case "/history" -> sendMessage(chatId, "История запросов пока не реализована.");
+            case "/history" -> sendMessage(chatId, formatHistory(userId));
+
+            case "/analytics" -> sendMessage(chatId, formatAnalytics());
 
             default -> sendMessage(chatId, "Неизвестная команда. Используйте /help.");
         }
@@ -126,7 +140,8 @@ public class CreditTelegramBot implements SpringLongPollingBot, LongPollingSingl
                 BigDecimal rate = parseNonNegativeDecimal(text, "процентную ставку");
                 session.setAnnualRate(rate);
                 session.setStep(ConversationStep.WAITING_PAYMENT_TYPE);
-                sendMessage(chatId, """
+                sendMessage(chatId,
+                        """
                         Выберите тип платежа:
                         1 — аннуитетный
                         2 — дифференцированный
@@ -154,6 +169,52 @@ public class CreditTelegramBot implements SpringLongPollingBot, LongPollingSingl
 
             case NONE -> sendMessage(chatId, "Сначала отправьте /calculate");
         }
+    }
+
+    private String formatHistory(long userId) {
+        List<CreditRequest> history = historyService.getUserHistory(userId);
+
+        if (history.isEmpty()) {
+            return "У вас пока нет запросов.";
+        }
+
+        StringBuilder sb = new StringBuilder("Ваша история запросов:\n\n");
+        for (CreditRequest request : history) {
+            sb.append("• ")
+                    .append(request.amount()).append(" руб., ")
+                    .append(request.termMonths()).append(" мес., ")
+                    .append(request.annualRate()).append("%, ")
+                    .append(request.paymentType())
+                    .append("\n");
+        }
+        return sb.toString();
+    }
+
+    private String formatAnalytics() {
+        long total = analyticsService.totalRequests();
+        Map<PaymentType, Long> paymentTypes = analyticsService.paymentTypeStats();
+        Map<Integer, Long> terms = analyticsService.termStats();
+
+        String mostPopularTerm = terms.entrySet().stream()
+                .max(Map.Entry.comparingByValue())
+                .map(entry -> entry.getKey() + " мес.")
+                .orElse("нет данных");
+
+        return """
+                Аналитика:
+                
+                Всего запросов: %d
+                Самый популярный срок: %s
+                
+                Типы платежей:
+                Аннуитетный: %d
+                Дифференцированный: %d
+                """.formatted(
+                total,
+                mostPopularTerm,
+                paymentTypes.getOrDefault(PaymentType.ANNUITY, 0L),
+                paymentTypes.getOrDefault(PaymentType.DIFFERENTIAL, 0L)
+        );
     }
 
     private BigDecimal parsePositiveDecimal(String text, String fieldName) {
