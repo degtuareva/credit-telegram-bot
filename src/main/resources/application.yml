@@ -22,14 +22,8 @@ spring:
 
 telegram:
   bot:
-    username: credit_olga_telegram_bot
-    token: 8731688042:AAGr5Ibp-N1S656vpClWdQ0bNqP3xfOkfcI
+    username: ${TELEGRAM_BOT_USERNAME:credit_olga_telegram_bot}
+    token: ${TELEGRAM_BOT_TOKEN}
 
-  manager-password: "OlgaManager2026!"
-  manager-ids:
-    - 539942281
-
-
-
-
-
+  manager-password: ${TELEGRAM_MANAGER_PASSWORD}
+  manager-ids: ${TELEGRAM_MANAGER_IDS:539942281}
