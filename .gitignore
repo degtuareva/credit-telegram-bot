@@ -36,3 +36,13 @@ build/
 
 ### Mac OS ###
 .DS_Store
+
+target/
+.idea/
+*.iml
+
+.env
+application-local.yml
+application-secret.yml
+
+*.log

@@ -5,6 +5,20 @@ import org.springframework.stereotype.Component;
 
 import java.util.Map;
 
+/**
+ * Фабрика для создания калькуляторов платежей.
+ * <p>
+ * Реализует паттерн Factory Method, предоставляя клиентскому коду
+ * возможность получения нужного калькулятора по типу платежа
+ * без знания деталей реализации.
+ * </p>
+ *
+ * @author Ваше Имя
+ * @version 1.0
+ * @see PaymentCalculator
+ * @see PaymentType
+ */
+
 @Component
 public class PaymentCalculatorFactory {
 

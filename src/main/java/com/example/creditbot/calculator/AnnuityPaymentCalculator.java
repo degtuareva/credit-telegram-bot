@@ -10,6 +10,23 @@ import java.math.RoundingMode;
 import java.util.ArrayList;
 import java.util.List;
 
+/**
+ * Калькулятор аннуитетных платежей.
+ * <p>
+ * Рассчитывает график погашения кредита по аннуитетной схеме,
+ * где ежемесячный платёж остаётся постоянным на всём сроке.
+ * </p>
+ * <p>
+ * Использует формулу:
+ * A = S × (i × (1+i)^n) / ((1+i)^n - 1)
+ * где S — сумма кредита, i — месячная ставка, n — срок в месяцах.
+ * </p>
+ *
+ * @author Ваше Имя
+ * @version 1.0
+ * @see PaymentCalculator
+ */
+
 @Component
 public class AnnuityPaymentCalculator implements PaymentCalculator {
 

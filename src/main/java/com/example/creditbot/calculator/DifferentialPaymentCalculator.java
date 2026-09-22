@@ -10,6 +10,18 @@ import java.math.RoundingMode;
 import java.util.ArrayList;
 import java.util.List;
 
+/**
+ * Калькулятор дифференцированных платежей.
+ * <p>
+ * Рассчитывает график погашения кредита по дифференцированной схеме,
+ * где основная часть долга делится равномерно, а проценты начисляются
+ * на остаток задолженности, что приводит к уменьшению платежа со временем.
+ * </p>
+ *
+ * @author Ваше Имя
+ * @version 1.0
+ * @see PaymentCalculator
+ */
 @Component
 public class DifferentialPaymentCalculator implements PaymentCalculator {
 

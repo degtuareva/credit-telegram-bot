@@ -1,6 +1,7 @@
 package com.example.creditbot.repository;
 
 import com.example.creditbot.domain.CreditRequest;
+import org.springframework.context.annotation.Profile;
 import org.springframework.stereotype.Repository;
 
 import java.util.ArrayList;
@@ -8,7 +9,26 @@ import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.atomic.AtomicLong;
 
+/**
+ * Реализация репозитория для хранения запросов в памяти.
+ * <p>
+ * Использует ArrayList для хранения данных и ConcurrentHashMap
+ * для управления сессиями пользователей. Подходит для учебных
+ * и демонстрационных целей.
+ * </p>
+ * <p>
+ * В production-среде может быть заменена на реализацию с
+ * использованием базы данных (PostgreSQL, MySQL) без изменения
+ * интерфейса.
+ * </p>
+ *
+ * @author Ваше Имя
+ * @version 1.0
+ * @see CreditRequestRepository
+ */
+
 @Repository
+@Profile("memory")
 public class InMemoryCreditRequestRepository
         implements CreditRequestRepository {
 

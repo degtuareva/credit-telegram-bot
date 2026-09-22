@@ -10,6 +10,12 @@ import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
 
+/**
+ * Сервис расчёта и сохранения кредитных запросов.
+ *
+ * <p>Сервис выполняет валидацию, сохраняет запрос
+ * и выбирает подходящий калькулятор через фабрику.</p>
+ */
 @Service
 public class CreditService {
 
@@ -27,10 +33,19 @@ public class CreditService {
         this.validator = validator;
     }
 
-    public CreditSchedule calculateAndSave(CreditRequest request) {
+    /**
+     * Валидирует запрос, сохраняет его и рассчитывает график.
+     *
+     * @param request параметры кредита
+     * @return рассчитанный график платежей
+     * @throws IllegalArgumentException если запрос некорректен
+     */
+    public CreditSchedule calculateAndSave(
+            CreditRequest request
+    ) {
         validator.validate(request);
 
-        CreditRequest savedRequest = repository.save(
+        CreditRequest requestToSave =
                 new CreditRequest(
                         0L,
                         request.telegramUserId(),
@@ -39,11 +54,15 @@ public class CreditService {
                         request.annualRate(),
                         request.paymentType(),
                         LocalDateTime.now()
-                )
-        );
+                );
+
+        CreditRequest savedRequest =
+                repository.save(requestToSave);
 
         PaymentCalculator calculator =
-                calculatorFactory.getCalculator(savedRequest.paymentType());
+                calculatorFactory.getCalculator(
+                        savedRequest.paymentType()
+                );
 
         return calculator.calculate(savedRequest);
     }
