@@ -14,7 +14,7 @@ import java.time.LocalDateTime;
  * методов getter, equals, hashCode и toString.
  * </p>
  *
- * @author Ваше Имя
+ * @author degtuareva
  * @version 1.0
  */
 

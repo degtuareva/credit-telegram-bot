@@ -75,7 +75,7 @@ public class ManagerAuthService {
     /**
      * Проверяет пароль и создаёт авторизованную сессию.
      *
-     * @param userId Telegram ID пользователя
+     * @param userId   Telegram ID пользователя
      * @param password введённый пароль
      * @return true, если авторизация выполнена успешно
      */

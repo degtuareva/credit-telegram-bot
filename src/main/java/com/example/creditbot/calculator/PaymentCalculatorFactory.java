@@ -13,7 +13,7 @@ import java.util.Map;
  * без знания деталей реализации.
  * </p>
  *
- * @author Ваше Имя
+ * @author degtuareva
  * @version 1.0
  * @see PaymentCalculator
  * @see PaymentType

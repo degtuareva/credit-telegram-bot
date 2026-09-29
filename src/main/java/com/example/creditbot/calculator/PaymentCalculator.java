@@ -11,7 +11,7 @@ import com.example.creditbot.domain.CreditSchedule;
  * (аннуитетный, дифференцированный) без изменения клиентского кода.
  * </p>
  *
- * @author Ваше Имя
+ * @author degtuareva
  * @version 1.0
  * @see AnnuityPaymentCalculator
  * @see DifferentialPaymentCalculator

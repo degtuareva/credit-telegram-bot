@@ -83,8 +83,8 @@ public class AnalyticsService {
     /**
      * Фильтрует запросы по сумме и типу платежа.
      *
-     * @param minAmount минимальная сумма
-     * @param maxAmount максимальная сумма
+     * @param minAmount   минимальная сумма
+     * @param maxAmount   максимальная сумма
      * @param paymentType тип платежа
      * @return список подходящих запросов
      */

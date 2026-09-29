@@ -12,7 +12,7 @@ import java.util.Optional;
  * реализацию (in-memory, база данных, файл) без изменения бизнес-логики.
  * </p>
  *
- * @author Ваше Имя
+ * @author degtuareva
  * @version 1.0
  * @see CreditRequest
  * @see InMemoryCreditRequestRepository

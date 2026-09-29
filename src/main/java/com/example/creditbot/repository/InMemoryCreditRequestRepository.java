@@ -22,7 +22,7 @@ import java.util.concurrent.atomic.AtomicLong;
  * интерфейса.
  * </p>
  *
- * @author Ваше Имя
+ * @author degtuareva
  * @version 1.0
  * @see CreditRequestRepository
  */

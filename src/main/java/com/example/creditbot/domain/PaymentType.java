@@ -6,7 +6,7 @@ package com.example.creditbot.domain;
  * Определяет доступные схемы расчёта: аннуитетную и дифференцированную.
  * </p>
  *
- * @author Ваше Имя
+ * @author degtuareva
  * @version 1.0
  */
 

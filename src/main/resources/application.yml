@@ -1,11 +1,10 @@
 spring:
   profiles:
     active: postgres
-
   datasource:
-    url: ${DB_URL:jdbc:postgresql://localhost:5432/credit_bot}
-    username: ${DB_USERNAME:credit_user}
-    password: ${DB_PASSWORD:credit_password}
+    url: jdbc:postgresql://localhost:5432/credit_bot
+    username: postgres
+    password: root
     driver-class-name: org.postgresql.Driver
 
   jpa:
@@ -22,8 +21,8 @@ spring:
 
 telegram:
   bot:
-    username: ${TELEGRAM_BOT_USERNAME:credit_olga_telegram_bot}
+    username: credit_olga_telegram_bot
     token: ${TELEGRAM_BOT_TOKEN}
 
-  manager-password: ${TELEGRAM_MANAGER_PASSWORD}
+  manager-password: ${TELEGRAM_MANAGER_PASSWORD:admin123}
   manager-ids: ${TELEGRAM_MANAGER_IDS:539942281}

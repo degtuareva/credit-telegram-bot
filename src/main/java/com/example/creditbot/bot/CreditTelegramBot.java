@@ -18,13 +18,15 @@ import org.telegram.telegrambots.longpolling.starter.SpringLongPollingBot;
 import org.telegram.telegrambots.longpolling.util.LongPollingSingleThreadUpdateConsumer;
 import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
 import org.telegram.telegrambots.meta.api.objects.Update;
+import org.telegram.telegrambots.meta.api.objects.replykeyboard.InlineKeyboardMarkup;
+import org.telegram.telegrambots.meta.api.objects.replykeyboard.buttons.InlineKeyboardButton;
+import org.telegram.telegrambots.meta.api.objects.replykeyboard.buttons.InlineKeyboardRow;
 import org.telegram.telegrambots.meta.exceptions.TelegramApiException;
 import org.telegram.telegrambots.meta.generics.TelegramClient;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 
@@ -35,10 +37,7 @@ import java.util.Map;
  * управляет пошаговым диалогом, вызывает сервисы приложения
  * и отправляет результаты обратно в Telegram.</p>
  *
- * <p>Класс является транспортным слоем. Расчёты, валидация,
- * история и аналитика выполняются в отдельных сервисах.</p>
- *
- * @author Ваше имя
+ * @author degtuareva
  * @version 1.0
  */
 @Component
@@ -92,6 +91,18 @@ public class CreditTelegramBot
 
     @Override
     public void consume(Update update) {
+        // Обработка нажатий на инлайн-кнопки
+        if (update.hasCallbackQuery()) {
+            String callbackData = update.getCallbackQuery().getData();
+            long chatId = update.getCallbackQuery().getMessage().getChatId();
+            long userId = update.getCallbackQuery().getFrom().getId();
+            UserSession session = conversationService.getSession(userId);
+
+            // Обрабатываем нажатие кнопки как команду
+            handleCommand(chatId, userId, callbackData, session);
+            return;
+        }
+
         if (update == null ||
                 !update.hasMessage() ||
                 !update.getMessage().hasText()) {
@@ -150,31 +161,37 @@ public class CreditTelegramBot
         String command = extractCommand(text);
 
         switch (command) {
-            case "/start" -> sendMessage(
-                    chatId,
-                    """
-                    Привет! Я бот для расчёта графика погашения кредита.
+            case "/start" -> sendStartMessage(chatId);
 
-                    Команды:
-                    /calculate — начать расчёт
-                    /history — история запросов
-                    /analytics — аналитика для менеджера
-                    /help — помощь
-                    """
-            );
+            case "/help" -> {
+                InlineKeyboardRow row1 = new InlineKeyboardRow(
+                        InlineKeyboardButton.builder().text("📊 Рассчитать кредит").callbackData("/calculate").build()
+                );
+                InlineKeyboardRow row2 = new InlineKeyboardRow(
+                        InlineKeyboardButton.builder().text("📜 История").callbackData("/history").build()
+                );
+                InlineKeyboardMarkup markup = new InlineKeyboardMarkup(List.of(row1, row2));
 
-            case "/help" -> sendMessage(
-                    chatId,
-                    """
-                    Как пользоваться ботом:
+                SendMessage message = SendMessage.builder()
+                        .chatId(chatId)
+                        .text("""
+                                Как пользоваться ботом:
 
-                    1. Отправьте /calculate.
-                    2. Введите сумму кредита.
-                    3. Введите срок в месяцах.
-                    4. Введите годовую ставку.
-                    5. Выберите тип платежа.
-                    """
-            );
+                                1. Нажмите «Рассчитать кредит» или отправьте /calculate.
+                                2. Введите сумму кредита.
+                                3. Введите срок в месяцах.
+                                4. Введите годовую ставку.
+                                5. Выберите тип платежа (1 или 2).
+                                """)
+                        .replyMarkup(markup)
+                        .build();
+
+                try {
+                    telegramClient.execute(message);
+                } catch (TelegramApiException e) {
+                    log.error("Ошибка отправки сообщения помощи", e);
+                }
+            }
 
             case "/calculate" -> {
                 session.reset();
@@ -192,6 +209,7 @@ public class CreditTelegramBot
                     chatId,
                     formatHistory(userId)
             );
+
             case "/manager_login" -> {
                 if (!managerAuthService.isAllowedManager(userId)) {
                     sendMessage(
@@ -227,7 +245,7 @@ public class CreditTelegramBot
                             """
                             Доступ запрещён.
             
-                            Для входа используйте:
+                            Для входа используйте команду:
                             /manager_login
                             """
                     );
@@ -247,6 +265,33 @@ public class CreditTelegramBot
         }
     }
 
+    private void sendStartMessage(long chatId) {
+        // Создаем инлайн-кнопки с использованием InlineKeyboardRow (актуально для новых версий)
+        InlineKeyboardRow row1 = new InlineKeyboardRow(
+                InlineKeyboardButton.builder().text("📊 Рассчитать кредит").callbackData("/calculate").build()
+        );
+
+        InlineKeyboardRow row2 = new InlineKeyboardRow(
+                InlineKeyboardButton.builder().text("📜 История").callbackData("/history").build(),
+                InlineKeyboardButton.builder().text("❓ Помощь").callbackData("/help").build()
+        );
+
+        // Передаем список рядов в конструктор InlineKeyboardMarkup
+        InlineKeyboardMarkup markup = new InlineKeyboardMarkup(List.of(row1, row2));
+
+        // Собираем сообщение через статический билдер SendMessage
+        SendMessage message = SendMessage.builder()
+                .chatId(chatId)
+                .text("Привет! Я бот для расчёта графика погашения кредита. Выберите действие:")
+                .replyMarkup(markup)
+                .build();
+
+        try {
+            telegramClient.execute(message);
+        } catch (TelegramApiException e) {
+            log.error("Ошибка отправки приветственного сообщения", e);
+        }
+    }
     private String extractCommand(String text) {
         if (text == null || text.isBlank()) {
             return "";
@@ -265,7 +310,6 @@ public class CreditTelegramBot
 
         return command;
     }
-
     private void handleConversationStep(
             long chatId,
             long userId,
@@ -381,7 +425,7 @@ public class CreditTelegramBot
 
             case NONE -> sendMessage(
                     chatId,
-                    "Сначала отправьте /calculate."
+                    "Сначала отправьте /calculate или нажмите кнопку расчета."
             );
         }
     }
@@ -543,27 +587,6 @@ public class CreditTelegramBot
                             "2 для дифференцированного платежа."
             );
         };
-    }
-
-    private boolean isManager(long userId) {
-        if (managerIds == null || managerIds.isBlank()) {
-            return false;
-        }
-
-        return Arrays.stream(managerIds.split(","))
-                .map(String::trim)
-                .filter(id -> !id.isBlank())
-                .anyMatch(id -> {
-                    try {
-                        return Long.parseLong(id) == userId;
-                    } catch (NumberFormatException exception) {
-                        log.warn(
-                                "Некорректный manager ID в конфигурации: {}",
-                                id
-                        );
-                        return false;
-                    }
-                });
     }
 
     private String formatPaymentType(PaymentType paymentType) {

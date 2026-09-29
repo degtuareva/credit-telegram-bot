@@ -22,7 +22,7 @@ import java.util.List;
  * где S — сумма кредита, i — месячная ставка, n — срок в месяцах.
  * </p>
  *
- * @author Ваше Имя
+ * @author degtuareva
  * @version 1.0
  * @see PaymentCalculator
  */

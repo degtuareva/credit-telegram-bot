@@ -5,7 +5,7 @@ import java.time.Instant;
 /**
  * Хранит состояние авторизации менеджера.
  *
- * @param authenticated признак успешной авторизации
+ * @param authenticated   признак успешной авторизации
  * @param authenticatedAt время авторизации
  */
 public record ManagerSession(

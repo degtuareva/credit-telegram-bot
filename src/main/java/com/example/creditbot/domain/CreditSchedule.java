@@ -10,7 +10,7 @@ import java.util.List;
  * и помесячный список платежей.
  * </p>
  *
- * @author Ваше Имя
+ * @author degtuareva
  * @version 1.0
  * @see Payment
  */

@@ -18,7 +18,7 @@ import java.util.List;
  * на остаток задолженности, что приводит к уменьшению платежа со временем.
  * </p>
  *
- * @author Ваше Имя
+ * @author degtuareva
  * @version 1.0
  * @see PaymentCalculator
  */

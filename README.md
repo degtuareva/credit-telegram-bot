@@ -45,7 +45,8 @@ Telegram-бот для расчёта графиков погашения кре
 
 ## Описание проекта
 
-Пользователям часто сложно самостоятельно рассчитать график погашения кредита с учётом суммы, срока, процентной ставки и типа платежа.
+Пользователям часто сложно самостоятельно рассчитать график погашения кредита с учётом суммы, срока, процентной ставки и
+типа платежа.
 
 Менеджеры компании также не имеют удобного инструмента для анализа интересов клиентов и популярных параметров кредитов.
 
@@ -85,25 +86,25 @@ Telegram-бот для расчёта графиков погашения кре
 
 ### Для пользователей
 
-| Возможность | Описание |
-|---|---|
-| Расчёт кредита | Ввод суммы, срока, ставки и типа платежа |
-| Аннуитетный график | Расчёт равных ежемесячных платежей |
-| Дифференцированный график | Расчёт платежей, уменьшающихся со временем |
-| Детальный график | Тело кредита, проценты, общий платёж и остаток долга |
-| История запросов | Просмотр предыдущих расчётов пользователя |
-| Валидация данных | Проверка суммы, срока, ставки и типа платежа |
+| Возможность               | Описание                                             |
+|---------------------------|------------------------------------------------------|
+| Расчёт кредита            | Ввод суммы, срока, ставки и типа платежа             |
+| Аннуитетный график        | Расчёт равных ежемесячных платежей                   |
+| Дифференцированный график | Расчёт платежей, уменьшающихся со временем           |
+| Детальный график          | Тело кредита, проценты, общий платёж и остаток долга |
+| История запросов          | Просмотр предыдущих расчётов пользователя            |
+| Валидация данных          | Проверка суммы, срока, ставки и типа платежа         |
 
 ### Для менеджеров
 
-| Возможность | Описание |
-|---|---|
-| Общая статистика | Количество всех кредитных запросов |
-| Статистика по типам | Популярность аннуитетных и дифференцированных платежей |
-| Статистика по срокам | Анализ популярных сроков кредитования |
-| Статистика по суммам | Анализ наиболее часто запрашиваемых сумм |
-| Фильтрация | Поиск запросов по сумме и типу платежа |
-| Ограниченный доступ | Доступ к аналитике только для менеджеров |
+| Возможность          | Описание                                               |
+|----------------------|--------------------------------------------------------|
+| Общая статистика     | Количество всех кредитных запросов                     |
+| Статистика по типам  | Популярность аннуитетных и дифференцированных платежей |
+| Статистика по срокам | Анализ популярных сроков кредитования                  |
+| Статистика по суммам | Анализ наиболее часто запрашиваемых сумм               |
+| Фильтрация           | Поиск запросов по сумме и типу платежа                 |
+| Ограниченный доступ  | Доступ к аналитике только для менеджеров               |
 
 ---
 
@@ -120,7 +121,8 @@ Telegram-бот для расчёта графиков погашения кре
 - PostgreSQL — планируемое или подключаемое постоянное хранилище;
 - Flyway — управление миграциями базы данных.
 
-TelegramBots Spring Boot Starter автоматически регистрирует Spring-компонент бота при запуске приложения и поддерживает режим long polling. [119]
+TelegramBots Spring Boot Starter автоматически регистрирует Spring-компонент бота при запуске приложения и поддерживает
+режим long polling. [119]
 
 ---
 
@@ -159,15 +161,15 @@ TelegramBots Spring Boot Starter автоматически регистриру
 
 ### Основные слои
 
-| Пакет | Ответственность |
-|---|---|
-| `bot` | Telegram-команды и диалог с пользователем |
-| `calculator` | Расчёт графиков платежей |
-| `domain` | Модели предметной области |
-| `repository` | Абстракция хранения данных |
-| `service` | Бизнес-логика, история и аналитика |
-| `validation` | Проверка входных параметров |
-| `persistence` | Работа с JPA-сущностями и PostgreSQL |
+| Пакет         | Ответственность                           |
+|---------------|-------------------------------------------|
+| `bot`         | Telegram-команды и диалог с пользователем |
+| `calculator`  | Расчёт графиков платежей                  |
+| `domain`      | Модели предметной области                 |
+| `repository`  | Абстракция хранения данных                |
+| `service`     | Бизнес-логика, история и аналитика        |
+| `validation`  | Проверка входных параметров               |
+| `persistence` | Работа с JPA-сущностями и PostgreSQL      |
 
 ---
 
@@ -177,59 +179,73 @@ TelegramBots Spring Boot Starter автоматически регистриру
 src
 ├── main
 │   ├── java
-│   │   └── com/example/creditbot
-│   │       ├── CreditBotApplication.java
-│   │       │
-│   │       ├── bot
-│   │       │   ├── CreditTelegramBot.java
-│   │       │   ├── ConversationService.java
-│   │       │   ├── ConversationStep.java
-│   │       │   └── UserSession.java
-│   │       │
-│   │       ├── calculator
-│   │       │   ├── PaymentCalculator.java
-│   │       │   ├── AnnuityPaymentCalculator.java
-│   │       │   ├── DifferentialPaymentCalculator.java
-│   │       │   └── PaymentCalculatorFactory.java
-│   │       │
-│   │       ├── domain
-│   │       │   ├── CreditRequest.java
-│   │       │   ├── CreditSchedule.java
-│   │       │   ├── Payment.java
-│   │       │   └── PaymentType.java
-│   │       │
-│   │       ├── repository
-│   │       │   ├── CreditRequestRepository.java
-│   │       │   └── InMemoryCreditRequestRepository.java
-│   │       │
-│   │       ├── service
-│   │       │   ├── CreditService.java
-│   │       │   ├── HistoryService.java
-│   │       │   └── AnalyticsService.java
-│   │       │
-│   │       ├── validation
-│   │       │   └── CreditRequestValidator.java
-│   │       │
-│   │       └── persistence
-│   │           ├── entity
-│   │           │   └── CreditRequestEntity.java
-│   │           └── repository
-│   │               └── CreditRequestJpaRepository.java
+│   │   └── com
+│   │       └── example
+│   │           └── creditbot
+│   │               │   CreditBotApplication.java
+│   │               │
+│   │               +---bot
+│   │               │       ConversationService.java
+│   │               │       ConversationStep.java
+│   │               │       CreditTelegramBot.java
+│   │               │       UserSession.java
+│   │               │
+│   │               +---calculator
+│   │               │       AnnuityPaymentCalculator.java
+│   │               │       DifferentialPaymentCalculator.java
+│   │               │       PaymentCalculator.java
+│   │               │       PaymentCalculatorFactory.java
+│   │               │
+│   │               +---domain
+│   │               │       CreditRequest.java
+│   │               │       CreditSchedule.java
+│   │               │       Payment.java
+│   │               │       PaymentType.java
+│   │               │
+│   │               +---persistence
+│   │               │   │   PostgresCreditRequestRepository.java
+│   │               │   │
+│   │               │   +---entity
+│   │               │   │       CreditRequestEntity.java
+│   │               │   │
+│   │               │   \---repository
+│   │               │           CreditRequestJpaRepository.java
+│   │               │
+│   │               +---repository
+│   │               │       CreditRequestRepository.java
+│   │               │       InMemoryCreditRequestRepository.java
+│   │               │
+│   │               +---security
+│   │               │       ManagerAuthService.java
+│   │               │       ManagerSession.java
+│   │               │
+│   │               +---service
+│   │               │       AnalyticsService.java
+│   │               │       CreditService.java
+│   │               │       HistoryService.java
+│   │               │
+│   │               \---validation
+│   │                       CreditRequestValidator.java
 │   │
-│   └── resources
-│       ├── application.yml
-│       └── db
-│           └── migration
-│               └── V1__create_credit_requests.sql
+│   \---resources
+│       │   application-dev.yml
+│       │   application.yml
+│       │
+│       \---db
+│           \---migration
+│                   V1__create_credit_requests.sql
 │
-└── test
-    └── java
-        └── com/example/creditbot
-            ├── calculator
-            │   ├── AnnuityPaymentCalculatorTest.java
-            │   └── DifferentialPaymentCalculatorTest.java
-            └── validation
-                └── CreditRequestValidatorTest.java
+\---test
+    \---java
+        \---com
+            \---example
+                \---creditbot
+                    +---calculator
+                    │       AnnuityPaymentCalculatorTest.java
+                    │       DifferentialPaymentCalculatorTest.java
+                    │
+                    \---validation
+                            CreditRequestValidatorTest.java
 ```
 
 ---
@@ -461,7 +477,8 @@ telegram:
 
 ### Рекомендуемый вариант
 
-Spring Boot поддерживает внешнюю конфигурацию через переменные окружения, поэтому секреты можно не хранить внутри исходного кода и конфигурационных файлов. [232][233]
+Spring Boot поддерживает внешнюю конфигурацию через переменные окружения, поэтому секреты можно не хранить внутри
+исходного кода и конфигурационных файлов. [232][233]
 
 ```yaml
 telegram:
@@ -528,7 +545,8 @@ export DB_USERNAME="postgres"
 export DB_PASSWORD="postgres"
 ```
 
-Для учебного варианта можно использовать `InMemoryCreditRequestRepository`. Однако данные такого хранилища исчезают после остановки приложения.
+Для учебного варианта можно использовать `InMemoryCreditRequestRepository`. Однако данные такого хранилища исчезают
+после остановки приложения.
 
 Для дипломной версии рекомендуется PostgreSQL, так как он обеспечивает постоянное хранение истории запросов и аналитики.
 
@@ -538,20 +556,20 @@ export DB_PASSWORD="postgres"
 
 ### Команды пользователя
 
-| Команда | Назначение |
-|---|---|
-| `/start` | Приветствие и список доступных команд |
-| `/calculate` | Запуск расчёта кредита |
-| `/history` | История запросов пользователя |
-| `/help` | Инструкция по использованию |
+| Команда      | Назначение                            |
+|--------------|---------------------------------------|
+| `/start`     | Приветствие и список доступных команд |
+| `/calculate` | Запуск расчёта кредита                |
+| `/history`   | История запросов пользователя         |
+| `/help`      | Инструкция по использованию           |
 
 ### Команды менеджера
 
-| Команда | Назначение |
-|---|---|
-| `/analytics` | Общая статистика по запросам |
-| `/filter` | Фильтрация запросов |
-| `/manager_login` | Авторизация менеджера |
+| Команда          | Назначение                   |
+|------------------|------------------------------|
+| `/analytics`     | Общая статистика по запросам |
+| `/filter`        | Фильтрация запросов          |
+| `/manager_login` | Авторизация менеджера        |
 
 Доступ к менеджерским командам должен проверяться по Telegram ID или через отдельный механизм авторизации.
 
@@ -621,7 +639,8 @@ export DB_PASSWORD="postgres"
 - возможность масштабирования;
 - сохранение истории после перезапуска приложения.
 
-Абстракция репозитория позволяет заменить in-memory-реализацию на PostgreSQL без изменения `CreditService`, `HistoryService` и `AnalyticsService`.
+Абстракция репозитория позволяет заменить in-memory-реализацию на PostgreSQL без
+изменения `CreditService`, `HistoryService` и `AnalyticsService`.
 
 ---
 
@@ -810,18 +829,18 @@ classDiagram
 
 ## Почему архитектура соответствует требованиям
 
-| Требование | Реализация |
-|---|---|
-| Абстракция | Интерфейсы `PaymentCalculator` и `CreditRequestRepository` |
-| Композиция | Сервисы получают зависимости через конструктор |
-| Factory pattern | `PaymentCalculatorFactory` |
-| Low Coupling | Сервисы зависят от интерфейсов |
-| High Cohesion | Каждый класс отвечает за одну область |
-| SOLID | Разделение ответственности и Dependency Injection |
-| DRY | Общая валидация в `CreditRequestValidator` |
-| KISS | Простая слоистая архитектура |
-| YAGNI | Нет лишних компонентов до появления требований |
-| ООП | Инкапсуляция, полиморфизм, интерфейсы и композиция |
+| Требование      | Реализация                                                 |
+|-----------------|------------------------------------------------------------|
+| Абстракция      | Интерфейсы `PaymentCalculator` и `CreditRequestRepository` |
+| Композиция      | Сервисы получают зависимости через конструктор             |
+| Factory pattern | `PaymentCalculatorFactory`                                 |
+| Low Coupling    | Сервисы зависят от интерфейсов                             |
+| High Cohesion   | Каждый класс отвечает за одну область                      |
+| SOLID           | Разделение ответственности и Dependency Injection          |
+| DRY             | Общая валидация в `CreditRequestValidator`                 |
+| KISS            | Простая слоистая архитектура                               |
+| YAGNI           | Нет лишних компонентов до появления требований             |
+| ООП             | Инкапсуляция, полиморфизм, интерфейсы и композиция         |
 
 ---
 
@@ -869,8 +888,8 @@ classDiagram
 
 ## Автор
 
-**Имя Фамилия**
+**Ольга Дегтярева**
 
-GitHub: `https://github.com/YOUR_USERNAME`
+GitHub: `https://github.com/degtuareva`
 
 Telegram-бот: `@credit_olga_telegram_bot`

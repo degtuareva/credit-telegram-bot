@@ -1,3 +1,5 @@
+version: '3.8'
+
 services:
   postgres:
     image: postgres:16
@@ -5,8 +7,8 @@ services:
     restart: unless-stopped
     environment:
       POSTGRES_DB: credit_bot
-      POSTGRES_USER: credit_user
-      POSTGRES_PASSWORD: credit_password
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: root
     ports:
       - "5432:5432"
     volumes:

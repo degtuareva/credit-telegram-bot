@@ -9,7 +9,7 @@ import java.math.BigDecimal;
  * проценты, общий платёж и остаток задолженности.
  * </p>
  *
- * @author Ваше Имя
+ * @author degtuareva
  * @version 1.0
  */
 
