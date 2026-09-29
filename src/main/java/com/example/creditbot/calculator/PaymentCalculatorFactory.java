@@ -42,7 +42,6 @@ public class PaymentCalculatorFactory {
                     "Неизвестный тип платежа: " + type
             );
         }
-
         return calculator;
     }
 }

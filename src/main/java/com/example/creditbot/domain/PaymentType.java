@@ -19,5 +19,4 @@ public enum PaymentType {
      * Дифференцированный платёж (уменьшающиеся платежи)
      */
     DIFFERENTIAL
-
 }

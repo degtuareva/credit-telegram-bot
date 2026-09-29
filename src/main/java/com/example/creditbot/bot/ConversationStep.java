@@ -34,5 +34,4 @@ public enum ConversationStep {
      * Ожидается пароль менеджера.
      */
     WAITING_MANAGER_PASSWORD
-
 }
