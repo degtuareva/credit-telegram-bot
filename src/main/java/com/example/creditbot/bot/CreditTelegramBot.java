@@ -36,7 +36,6 @@ import java.util.Map;
  * <p>Класс принимает команды и сообщения пользователей,
  * управляет пошаговым диалогом, вызывает сервисы приложения
  * и отправляет результаты обратно в Telegram.</p>
- *
  * @author degtuareva
  * @version 1.0
  */
@@ -91,41 +90,49 @@ public class CreditTelegramBot
 
     @Override
     public void consume(Update update) {
-        // Обработка нажатий на инлайн-кнопки
+        long chatId;
+        long userId;
+        String inputData;
+
+        // Определяем источник данных: нажатие инлайн-кнопки или текстовое сообщение
         if (update.hasCallbackQuery()) {
-            String callbackData = update.getCallbackQuery().getData();
-            long chatId = update.getCallbackQuery().getMessage().getChatId();
-            long userId = update.getCallbackQuery().getFrom().getId();
-            UserSession session = conversationService.getSession(userId);
-
-            // Обрабатываем нажатие кнопки как команду
-            handleCommand(chatId, userId, callbackData, session);
+            chatId = update.getCallbackQuery().getMessage().getChatId();
+            userId = update.getCallbackQuery().getFrom().getId();
+            inputData = update.getCallbackQuery().getData();
+        } else if (update.hasMessage() && update.getMessage().hasText()) {
+            chatId = update.getMessage().getChatId();
+            userId = update.getMessage().getFrom().getId();
+            inputData = update.getMessage().getText().trim();
+        } else {
             return;
         }
 
-        if (update == null ||
-                !update.hasMessage() ||
-                !update.getMessage().hasText()) {
-            return;
-        }
-
-        long chatId = update.getMessage().getChatId();
-        long userId = update.getMessage().getFrom().getId();
-        String text = update.getMessage().getText().trim();
-
-        UserSession session =
-                conversationService.getSession(userId);
+        UserSession session = conversationService.getSession(userId);
 
         try {
-            if (text.startsWith("/")) {
-                handleCommand(chatId, userId, text, session);
+            // Обрабатываем отмену действия из любого места
+            if ("/cancel".equals(inputData)) {
+                session.reset();
+                conversationService.clear(userId);
+                sendMessage(chatId, "Действие отменено. Главное меню:");
+                sendStartMessage(chatId);
+                return;
+            }
+
+            // Если бот находится в процессе диалога (ожидает ввод или выбор)
+            if (session.getStep() != ConversationStep.NONE) {
+                if (inputData.startsWith("/")) {
+                    handleCommand(chatId, userId, inputData, session);
+                } else {
+                    handleConversationStep(chatId, userId, inputData, session);
+                }
             } else {
-                handleConversationStep(
-                        chatId,
-                        userId,
-                        text,
-                        session
-                );
+                // Если диалог не запущен, обрабатываем как команду или обычный текст
+                if (inputData.startsWith("/")) {
+                    handleCommand(chatId, userId, inputData, session);
+                } else {
+                    sendMessage(chatId, "❓ Неизвестная команда. Используйте /help.");
+                }
             }
         } catch (IllegalArgumentException exception) {
             log.warn(
@@ -136,7 +143,7 @@ public class CreditTelegramBot
 
             sendMessage(
                     chatId,
-                    "Ошибка ввода: " + exception.getMessage()
+                    "❌ Ошибка ввода: " + exception.getMessage()
             );
         } catch (Exception exception) {
             log.error(
@@ -147,7 +154,7 @@ public class CreditTelegramBot
 
             sendMessage(
                     chatId,
-                    "Произошла внутренняя ошибка. Попробуйте позже."
+                    "⚠️ Произошла внутренняя ошибка. Попробуйте позже."
             );
         }
     }
@@ -175,13 +182,13 @@ public class CreditTelegramBot
                 SendMessage message = SendMessage.builder()
                         .chatId(chatId)
                         .text("""
-                                Как пользоваться ботом:
+                                📖 Как пользоваться ботом:
 
                                 1. Нажмите «Рассчитать кредит» или отправьте /calculate.
                                 2. Введите сумму кредита.
                                 3. Введите срок в месяцах.
                                 4. Введите годовую ставку.
-                                5. Выберите тип платежа (1 или 2).
+                                5. Выберите тип платежа с помощью кнопок.
                                 """)
                         .replyMarkup(markup)
                         .build();
@@ -199,22 +206,33 @@ public class CreditTelegramBot
                         ConversationStep.WAITING_AMOUNT
                 );
 
-                sendMessage(
-                        chatId,
-                        "Введите сумму кредита:"
-                );
+                sendCancelableMessage(chatId, "💰 Введите сумму кредита:");
             }
 
-            case "/history" -> sendMessage(
-                    chatId,
-                    formatHistory(userId)
-            );
+            case "/history" -> {
+                InlineKeyboardRow row = new InlineKeyboardRow(
+                        InlineKeyboardButton.builder().text("🔄 Новый расчет").callbackData("/calculate").build()
+                );
+                InlineKeyboardMarkup markup = new InlineKeyboardMarkup(List.of(row));
+
+                SendMessage message = SendMessage.builder()
+                        .chatId(chatId)
+                        .text(formatHistory(userId))
+                        .replyMarkup(markup)
+                        .build();
+
+                try {
+                    telegramClient.execute(message);
+                } catch (TelegramApiException e) {
+                    log.error("Ошибка отправки истории", e);
+                }
+            }
 
             case "/manager_login" -> {
                 if (!managerAuthService.isAllowedManager(userId)) {
                     sendMessage(
                             chatId,
-                            "Доступ запрещён. Вы не являетесь менеджером."
+                            "⛔ Доступ запрещён. Вы не являетесь менеджером."
                     );
                     return;
                 }
@@ -224,17 +242,14 @@ public class CreditTelegramBot
                         ConversationStep.WAITING_MANAGER_PASSWORD
                 );
 
-                sendMessage(
-                        chatId,
-                        "Введите пароль менеджера:"
-                );
+                sendCancelableMessage(chatId, "🔑 Введите пароль менеджера:");
             }
 
             case "/manager_logout" -> {
                 managerAuthService.logout(userId);
                 sendMessage(
                         chatId,
-                        "Вы вышли из менеджерской сессии."
+                        "🔒 Вы вышли из менеджерской сессии."
                 );
             }
 
@@ -243,7 +258,7 @@ public class CreditTelegramBot
                     sendMessage(
                             chatId,
                             """
-                            Доступ запрещён.
+                            ⛔ Доступ запрещён.
             
                             Для входа используйте команду:
                             /manager_login
@@ -260,13 +275,12 @@ public class CreditTelegramBot
 
             default -> sendMessage(
                     chatId,
-                    "Неизвестная команда. Используйте /help."
+                    "❓ Неизвестная команда. Используйте /help."
             );
         }
     }
 
     private void sendStartMessage(long chatId) {
-        // Создаем инлайн-кнопки с использованием InlineKeyboardRow (актуально для новых версий)
         InlineKeyboardRow row1 = new InlineKeyboardRow(
                 InlineKeyboardButton.builder().text("📊 Рассчитать кредит").callbackData("/calculate").build()
         );
@@ -276,13 +290,11 @@ public class CreditTelegramBot
                 InlineKeyboardButton.builder().text("❓ Помощь").callbackData("/help").build()
         );
 
-        // Передаем список рядов в конструктор InlineKeyboardMarkup
         InlineKeyboardMarkup markup = new InlineKeyboardMarkup(List.of(row1, row2));
 
-        // Собираем сообщение через статический билдер SendMessage
         SendMessage message = SendMessage.builder()
                 .chatId(chatId)
-                .text("Привет! Я бот для расчёта графика погашения кредита. Выберите действие:")
+                .text("👋 Привет! Я бот для расчёта графика погашения кредита. Выберите действие:")
                 .replyMarkup(markup)
                 .build();
 
@@ -292,6 +304,27 @@ public class CreditTelegramBot
             log.error("Ошибка отправки приветственного сообщения", e);
         }
     }
+
+    // Вспомогательный метод для отправки сообщений с кнопкой "Отмена" во время диалога
+    private void sendCancelableMessage(long chatId, String text) {
+        InlineKeyboardRow row = new InlineKeyboardRow(
+                InlineKeyboardButton.builder().text("❌ Отмена").callbackData("/cancel").build()
+        );
+        InlineKeyboardMarkup markup = new InlineKeyboardMarkup(List.of(row));
+
+        SendMessage message = SendMessage.builder()
+                .chatId(chatId)
+                .text(text)
+                .replyMarkup(markup)
+                .build();
+
+        try {
+            telegramClient.execute(message);
+        } catch (TelegramApiException e) {
+            log.error("Ошибка отправки сообщения", e);
+        }
+    }
+
     private String extractCommand(String text) {
         if (text == null || text.isBlank()) {
             return "";
@@ -310,6 +343,7 @@ public class CreditTelegramBot
 
         return command;
     }
+
     private void handleConversationStep(
             long chatId,
             long userId,
@@ -329,10 +363,7 @@ public class CreditTelegramBot
                         ConversationStep.WAITING_TERM
                 );
 
-                sendMessage(
-                        chatId,
-                        "Введите срок кредита в месяцах:"
-                );
+                sendCancelableMessage(chatId, "📅 Введите срок кредита в месяцах:");
             }
 
             case WAITING_TERM -> {
@@ -344,10 +375,7 @@ public class CreditTelegramBot
                         ConversationStep.WAITING_RATE
                 );
 
-                sendMessage(
-                        chatId,
-                        "Введите годовую процентную ставку:"
-                );
+                sendCancelableMessage(chatId, "📈 Введите годовую процентную ставку:");
             }
 
             case WAITING_RATE -> {
@@ -362,15 +390,27 @@ public class CreditTelegramBot
                         ConversationStep.WAITING_PAYMENT_TYPE
                 );
 
-                sendMessage(
-                        chatId,
-                        """
-                        Выберите тип платежа:
-
-                        1 — аннуитетный
-                        2 — дифференцированный
-                        """
+                // Выдаем красивые кнопки для выбора типа платежа
+                InlineKeyboardRow row1 = new InlineKeyboardRow(
+                        InlineKeyboardButton.builder().text("Аннуитетный").callbackData("1").build(),
+                        InlineKeyboardButton.builder().text("Дифференцированный").callbackData("2").build()
                 );
+                InlineKeyboardRow row2 = new InlineKeyboardRow(
+                        InlineKeyboardButton.builder().text("❌ Отмена").callbackData("/cancel").build()
+                );
+                InlineKeyboardMarkup markup = new InlineKeyboardMarkup(List.of(row1, row2));
+
+                SendMessage message = SendMessage.builder()
+                        .chatId(chatId)
+                        .text("⚖️ Выберите тип платежа:")
+                        .replyMarkup(markup)
+                        .build();
+
+                try {
+                    telegramClient.execute(message);
+                } catch (TelegramApiException e) {
+                    log.error("Ошибка отправки выбора типа платежа", e);
+                }
             }
             case WAITING_MANAGER_PASSWORD -> {
                 boolean authenticated =
@@ -386,7 +426,7 @@ public class CreditTelegramBot
                     sendMessage(
                             chatId,
                             """
-                            Авторизация успешно выполнена.
+                            ✅ Авторизация успешно выполнена.
             
                             Теперь доступна команда:
                             /analytics
@@ -395,7 +435,7 @@ public class CreditTelegramBot
                 } else {
                     sendMessage(
                             chatId,
-                            "Неверный пароль."
+                            "❌ Неверный пароль."
                     );
                 }
             }
@@ -421,11 +461,14 @@ public class CreditTelegramBot
 
                 sendSchedule(chatId, schedule);
                 conversationService.clear(userId);
+
+                // Предлагаем сделать новый расчет кнопкой
+                sendStartMessage(chatId);
             }
 
             case NONE -> sendMessage(
                     chatId,
-                    "Сначала отправьте /calculate или нажмите кнопку расчета."
+                    "⚠️ Сначала нажмите «Рассчитать кредит» или отправьте /calculate."
             );
         }
     }
@@ -435,11 +478,11 @@ public class CreditTelegramBot
                 historyService.getUserHistory(userId);
 
         if (history.isEmpty()) {
-            return "У вас пока нет сохранённых запросов.";
+            return "📭 У вас пока нет сохранённых запросов.";
         }
 
         StringBuilder result =
-                new StringBuilder("История запросов:\n\n");
+                new StringBuilder("📜 История запросов:\n\n");
 
         for (int index = 0; index < history.size(); index++) {
             CreditRequest request = history.get(index);
@@ -482,7 +525,7 @@ public class CreditTelegramBot
                 .orElse("нет данных");
 
         return """
-                Аналитика по кредитным запросам:
+                📊 Аналитика по кредитным запросам:
 
                 Всего запросов: %d
 
@@ -583,8 +626,7 @@ public class CreditTelegramBot
             case "1" -> PaymentType.ANNUITY;
             case "2" -> PaymentType.DIFFERENTIAL;
             default -> throw new IllegalArgumentException(
-                    "Введите 1 для аннуитетного или " +
-                            "2 для дифференцированного платежа."
+                    "Выберите тип платежа с помощью кнопок."
             );
         };
     }
@@ -614,7 +656,7 @@ public class CreditTelegramBot
         StringBuilder result =
                 new StringBuilder();
 
-        result.append("График платежей\n\n")
+        result.append("📋 График платежей\n\n")
                 .append("Переплата: ")
                 .append(schedule.totalInterest())
                 .append(" руб.\n")
@@ -640,7 +682,7 @@ public class CreditTelegramBot
         return result.toString();
     }
 
-    private List<String> splitMessage(String text) {
+     List<String> splitMessage(String text) {
         List<String> parts =
                 new ArrayList<>();
 
