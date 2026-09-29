@@ -51,6 +51,5 @@ public interface CreditRequestRepository {
      * @return найденный запрос или пустой Optional
      */
 
-
     Optional<CreditRequest> findById(long id);
 }
