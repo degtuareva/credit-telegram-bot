@@ -1,4 +1,4 @@
-package com.example.creditbot.handler;
+package com.example.creditbot.bot.handler;
 
 import com.example.creditbot.bot.ConversationService;
 import com.example.creditbot.bot.ConversationStep;
@@ -9,72 +9,88 @@ import com.example.creditbot.bot.support.InputParser;
 import com.example.creditbot.bot.support.TelegramMessageSender;
 import com.example.creditbot.domain.CreditRequest;
 import com.example.creditbot.domain.CreditSchedule;
-import com.example.creditbot.domain.PaymentType;
 import com.example.creditbot.security.ManagerAuthService;
 import com.example.creditbot.service.CreditService;
-import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 
-import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
 /**
- * Обрабатывает шаги диалогов пользователя.
+ * Обрабатывает ввод на шагах диалога.
  */
 @Component
-@RequiredArgsConstructor
 public class ConversationHandler {
 
     private final ConversationService conversationService;
     private final CreditService creditService;
     private final ManagerAuthService managerAuthService;
-    private final InputParser inputParser;
-    private final BotKeyboardFactory keyboardFactory;
-    private final BotMessageFormatter messageFormatter;
-    private final TelegramMessageSender messageSender;
+    private final InputParser parser;
+    private final BotKeyboardFactory keyboards;
+    private final BotMessageFormatter formatter;
+    private final TelegramMessageSender sender;
+
+    public ConversationHandler(
+            ConversationService conversationService,
+            CreditService creditService,
+            ManagerAuthService managerAuthService,
+            InputParser parser,
+            BotKeyboardFactory keyboards,
+            BotMessageFormatter formatter,
+            TelegramMessageSender sender
+    ) {
+        this.conversationService = conversationService;
+        this.creditService = creditService;
+        this.managerAuthService = managerAuthService;
+        this.parser = parser;
+        this.keyboards = keyboards;
+        this.formatter = formatter;
+        this.sender = sender;
+    }
 
     public void handle(
             long chatId,
             long userId,
             String input,
-            UserSession session
+            UserSession session,
+            boolean fromCallback
     ) {
+        // Старые кнопки выбора платежа не должны становиться
+        // суммой, сроком или паролем в новом диалоге.
+        if (fromCallback
+                && session.getStep()
+                != ConversationStep.WAITING_PAYMENT_TYPE) {
+            sender.send(
+                    chatId,
+                    "Эта кнопка сейчас неактуальна. "
+                            + "Продолжите текущий ввод или отправьте /cancel."
+            );
+            return;
+        }
+
         switch (session.getStep()) {
-            case WAITING_AMOUNT -> handleAmount(
-                    chatId,
-                    input,
-                    session
-            );
+            case WAITING_AMOUNT ->
+                    handleAmount(chatId, input, session);
 
-            case WAITING_TERM -> handleTerm(
-                    chatId,
-                    input,
-                    session
-            );
+            case WAITING_TERM ->
+                    handleTerm(chatId, input, session);
 
-            case WAITING_RATE -> handleRate(
-                    chatId,
-                    input,
-                    session
-            );
+            case WAITING_RATE ->
+                    handleRate(chatId, input, session);
 
-            case WAITING_PAYMENT_TYPE -> handlePaymentType(
-                    chatId,
-                    userId,
-                    input,
-                    session
-            );
+            case WAITING_PAYMENT_TYPE ->
+                    handlePaymentType(
+                            chatId,
+                            userId,
+                            input,
+                            session
+                    );
 
-            case WAITING_MANAGER_PASSWORD -> handleManagerPassword(
-                    chatId,
-                    userId,
-                    input,
-                    session
-            );
+            case WAITING_MANAGER_PASSWORD ->
+                    handleManagerPassword(chatId, userId, input);
 
-            case NONE -> messageSender.send(
+            case NONE -> sender.send(
                     chatId,
-                    "⚠️ Сначала отправьте /calculate."
+                    "❓ Используйте /calculate или /help."
             );
         }
     }
@@ -84,15 +100,13 @@ public class ConversationHandler {
             String input,
             UserSession session
     ) {
-        BigDecimal amount = inputParser.parseAmount(input);
-
-        session.setAmount(amount);
+        session.setAmount(parser.parseAmount(input));
         session.setStep(ConversationStep.WAITING_TERM);
 
-        messageSender.send(
+        sender.send(
                 chatId,
                 "📅 Введите срок кредита в месяцах:",
-                keyboardFactory.cancelKeyboard()
+                keyboards.cancelKeyboard()
         );
     }
 
@@ -101,15 +115,13 @@ public class ConversationHandler {
             String input,
             UserSession session
     ) {
-        int termMonths = inputParser.parseTermMonths(input);
-
-        session.setTermMonths(termMonths);
+        session.setTermMonths(parser.parseTermMonths(input));
         session.setStep(ConversationStep.WAITING_RATE);
 
-        messageSender.send(
+        sender.send(
                 chatId,
                 "📈 Введите годовую процентную ставку:",
-                keyboardFactory.cancelKeyboard()
+                keyboards.cancelKeyboard()
         );
     }
 
@@ -118,17 +130,13 @@ public class ConversationHandler {
             String input,
             UserSession session
     ) {
-        BigDecimal annualRate = inputParser.parseAnnualRate(input);
+        session.setAnnualRate(parser.parseAnnualRate(input));
+        session.setStep(ConversationStep.WAITING_PAYMENT_TYPE);
 
-        session.setAnnualRate(annualRate);
-        session.setStep(
-                ConversationStep.WAITING_PAYMENT_TYPE
-        );
-
-        messageSender.send(
+        sender.send(
                 chatId,
                 "⚖️ Выберите тип платежа:",
-                keyboardFactory.paymentTypeKeyboard()
+                keyboards.paymentTypeKeyboard()
         );
     }
 
@@ -138,10 +146,7 @@ public class ConversationHandler {
             String input,
             UserSession session
     ) {
-        PaymentType paymentType =
-                inputParser.parsePaymentType(input);
-
-        session.setPaymentType(paymentType);
+        session.setPaymentType(parser.parsePaymentType(input));
 
         CreditRequest request = new CreditRequest(
                 0L,
@@ -156,37 +161,34 @@ public class ConversationHandler {
         CreditSchedule schedule =
                 creditService.calculateAndSave(request);
 
-        messageSender.send(
-                chatId,
-                messageFormatter.formatSchedule(schedule)
-        );
-
+        // Расчёт уже сохранён. Завершаем диалог до отправки,
+        // чтобы ошибка сети не оставляла его на шаге сохранения.
         conversationService.clear(userId);
 
-        messageSender.send(
+        sender.send(
+                chatId,
+                formatter.formatSchedule(schedule)
+        );
+
+        sender.send(
                 chatId,
                 "✅ Расчёт сохранён. Выберите дальнейшее действие:",
-                keyboardFactory.startKeyboard()
+                keyboards.startKeyboard()
         );
     }
 
     private void handleManagerPassword(
             long chatId,
             long userId,
-            String input,
-            UserSession session
+            String input
     ) {
         boolean authenticated =
-                managerAuthService.authenticate(
-                        userId,
-                        input
-                );
+                managerAuthService.authenticate(userId, input);
 
-        session.reset();
         conversationService.clear(userId);
 
         if (authenticated) {
-            messageSender.send(
+            sender.send(
                     chatId,
                     """
                     ✅ Авторизация успешно выполнена.
@@ -195,9 +197,12 @@ public class ConversationHandler {
                     /analytics
                     """
             );
-            return;
+        } else {
+            sender.send(
+                    chatId,
+                    "❌ Неверный пароль. Для повторного входа "
+                            + "отправьте /manager_login."
+            );
         }
-
-        messageSender.send(chatId, "❌ Неверный пароль.");
     }
 }

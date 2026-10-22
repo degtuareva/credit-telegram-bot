@@ -1,4 +1,4 @@
-package com.example.creditbot.support;
+package com.example.creditbot.bot.support;
 
 import com.example.creditbot.domain.PaymentType;
 import org.springframework.stereotype.Component;
@@ -6,34 +6,20 @@ import org.springframework.stereotype.Component;
 import java.math.BigDecimal;
 
 /**
- * Проверяет и преобразует текст пользователя
- * в параметры кредитного расчёта.
+ * Преобразует текст пользователя в параметры кредита.
  */
 @Component
 public class InputParser {
 
-    private static final BigDecimal MIN_AMOUNT =
-            new BigDecimal("10000");
-
-    private static final BigDecimal MAX_AMOUNT =
-            new BigDecimal("50000000");
-
-    private static final BigDecimal MIN_RATE =
-            new BigDecimal("0.1");
-
-    private static final BigDecimal MAX_RATE =
-            new BigDecimal("100");
-
     public BigDecimal parseAmount(String text) {
         BigDecimal amount = parseDecimal(
                 text,
-                "сумму кредита"
+                "Введите корректную сумму кредита."
         );
 
-        if (amount.compareTo(MIN_AMOUNT) < 0
-                || amount.compareTo(MAX_AMOUNT) > 0) {
+        if (amount.compareTo(BigDecimal.ZERO) <= 0) {
             throw new IllegalArgumentException(
-                    "Сумма кредита должна быть от 10 000 до 50 000 000 рублей."
+                    "Сумма кредита должна быть больше нуля."
             );
         }
 
@@ -41,43 +27,54 @@ public class InputParser {
     }
 
     public int parseTermMonths(String text) {
-        int termMonths;
+        if (text == null || text.isBlank()) {
+            throw new IllegalArgumentException(
+                    "Введите срок кредита целым числом."
+            );
+        }
+
+        final int months;
 
         try {
-            termMonths = Integer.parseInt(text.trim());
+            months = Integer.parseInt(text.trim());
         } catch (NumberFormatException exception) {
             throw new IllegalArgumentException(
                     "Введите срок кредита целым числом."
             );
         }
 
-        if (termMonths < 1 || termMonths > 360) {
+        if (months < 1 || months > 360) {
             throw new IllegalArgumentException(
                     "Срок должен быть от 1 до 360 месяцев."
             );
         }
 
-        return termMonths;
+        return months;
     }
 
     public BigDecimal parseAnnualRate(String text) {
         BigDecimal rate = parseDecimal(
                 text,
-                "годовую процентную ставку"
+                "Введите корректную годовую процентную ставку."
         );
 
-        if (rate.compareTo(MIN_RATE) < 0
-                || rate.compareTo(MAX_RATE) > 0) {
+        if (rate.compareTo(BigDecimal.ZERO) < 0) {
             throw new IllegalArgumentException(
-                    "Ставка должна быть от 0.1% до 100%."
+                    "Процентная ставка не может быть отрицательной."
             );
         }
 
         return rate;
     }
 
-    public PaymentType parsePaymentType(String callbackData) {
-        return switch (callbackData.trim()) {
+    public PaymentType parsePaymentType(String text) {
+        if (text == null) {
+            throw new IllegalArgumentException(
+                    "Выберите тип платежа с помощью кнопок."
+            );
+        }
+
+        return switch (text.trim()) {
             case "1" -> PaymentType.ANNUITY;
             case "2" -> PaymentType.DIFFERENTIAL;
             default -> throw new IllegalArgumentException(
@@ -88,16 +85,18 @@ public class InputParser {
 
     private BigDecimal parseDecimal(
             String text,
-            String fieldName
+            String errorMessage
     ) {
+        if (text == null || text.isBlank()) {
+            throw new IllegalArgumentException(errorMessage);
+        }
+
+        String normalized = text.trim().replace(",", ".");
+
         try {
-            return new BigDecimal(
-                    text.replace(",", ".").trim()
-            );
+            return new BigDecimal(normalized);
         } catch (NumberFormatException exception) {
-            throw new IllegalArgumentException(
-                    "Введите корректную " + fieldName + "."
-            );
+            throw new IllegalArgumentException(errorMessage);
         }
     }
 }

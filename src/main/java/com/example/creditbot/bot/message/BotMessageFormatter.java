@@ -1,4 +1,4 @@
-package com.example.creditbot.message;
+package com.example.creditbot.bot.message;
 
 import com.example.creditbot.domain.CreditRequest;
 import com.example.creditbot.domain.CreditSchedule;
@@ -6,14 +6,19 @@ import com.example.creditbot.domain.Payment;
 import com.example.creditbot.domain.PaymentType;
 import org.springframework.stereotype.Component;
 
+import java.time.format.DateTimeFormatter;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
 
 /**
- * Формирует текстовые ответы Telegram-бота.
+ * Формирует текст сообщений.
  */
 @Component
 public class BotMessageFormatter {
+
+    private static final DateTimeFormatter DATE_FORMAT =
+            DateTimeFormatter.ofPattern("dd.MM.yyyy HH:mm");
 
     public String startMessage() {
         return """
@@ -27,13 +32,23 @@ public class BotMessageFormatter {
         return """
                 📖 Как пользоваться ботом:
 
-                1. Нажмите «Рассчитать кредит» или отправьте /calculate.
+                1. Отправьте /calculate или нажмите «Рассчитать кредит».
                 2. Введите сумму кредита.
                 3. Введите срок в месяцах.
                 4. Введите годовую ставку.
-                5. Выберите тип платежа с помощью кнопок.
+                5. Выберите тип платежа.
 
-                В любой момент можно отменить действие командой /cancel.
+                Команды:
+                /start — главное меню
+                /calculate — новый расчёт
+                /history — история запросов
+                /cancel — отменить текущий диалог
+                /help — помощь
+
+                Для менеджера:
+                /manager_login — вход
+                /analytics — аналитика
+                /manager_logout — выход
                 """;
     }
 
@@ -50,17 +65,21 @@ public class BotMessageFormatter {
             CreditRequest request = history.get(index);
 
             result.append(index + 1)
-                    .append(". ")
-                    .append(request.amount())
-                    .append(" руб., срок: ")
+                    .append(". Сумма: ")
+                    .append(request.amount().toPlainString())
+                    .append(" руб.\n")
+                    .append("Срок: ")
                     .append(request.termMonths())
-                    .append(" мес., ставка: ")
-                    .append(request.annualRate())
-                    .append("%, тип: ")
+                    .append(" мес.\n")
+                    .append("Ставка: ")
+                    .append(request.annualRate().toPlainString())
+                    .append("%\n")
+                    .append("Тип: ")
                     .append(formatPaymentType(request.paymentType()))
-                    .append(", дата: ")
-                    .append(request.createdAt())
-                    .append("\n");
+                    .append("\n")
+                    .append("Дата: ")
+                    .append(request.createdAt().format(DATE_FORMAT))
+                    .append("\n\n");
         }
 
         return result.toString();
@@ -71,9 +90,20 @@ public class BotMessageFormatter {
             Map<PaymentType, Long> paymentTypes,
             Map<Integer, Long> terms
     ) {
+        // При одинаковой популярности выбираем меньший срок.
+        Comparator<Map.Entry<Integer, Long>> termComparator =
+                Comparator
+                        .<Map.Entry<Integer, Long>>comparingLong(
+                                entry -> entry.getValue()
+                        )
+                        .thenComparing(
+                                entry -> entry.getKey(),
+                                Comparator.reverseOrder()
+                        );
+
         String popularTerm = terms.entrySet()
                 .stream()
-                .max(Map.Entry.comparingByValue())
+                .max(termComparator)
                 .map(entry ->
                         entry.getKey()
                                 + " мес. ("
@@ -110,25 +140,25 @@ public class BotMessageFormatter {
 
         result.append("📋 График платежей\n\n")
                 .append("Переплата: ")
-                .append(schedule.totalInterest())
+                .append(schedule.totalInterest().toPlainString())
                 .append(" руб.\n")
                 .append("Общая сумма выплат: ")
-                .append(schedule.totalPayment())
+                .append(schedule.totalPayment().toPlainString())
                 .append(" руб.\n\n");
 
         for (Payment payment : schedule.payments()) {
             result.append("Месяц ")
                     .append(payment.month())
                     .append(": ")
-                    .append(payment.totalPayment())
-                    .append(" руб. ")
-                    .append("(тело: ")
-                    .append(payment.principal())
+                    .append(payment.totalPayment().toPlainString())
+                    .append(" руб.\n")
+                    .append("Тело: ")
+                    .append(payment.principal().toPlainString())
                     .append(", проценты: ")
-                    .append(payment.interest())
+                    .append(payment.interest().toPlainString())
                     .append(", остаток: ")
-                    .append(payment.remainingDebt())
-                    .append(")\n");
+                    .append(payment.remainingDebt().toPlainString())
+                    .append("\n\n");
         }
 
         return result.toString();

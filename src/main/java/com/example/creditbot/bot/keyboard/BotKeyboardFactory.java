@@ -1,4 +1,4 @@
-package com.example.creditbot.keyboard;
+package com.example.creditbot.bot.keyboard;
 
 import org.springframework.stereotype.Component;
 import org.telegram.telegrambots.meta.api.objects.replykeyboard.InlineKeyboardMarkup;
@@ -8,42 +8,42 @@ import org.telegram.telegrambots.meta.api.objects.replykeyboard.buttons.InlineKe
 import java.util.List;
 
 /**
- * Создаёт инлайн-клавиатуры Telegram-бота.
+ * Создаёт клавиатуры Telegram-бота.
  */
 @Component
 @SuppressWarnings("deprecation")
 public class BotKeyboardFactory {
 
     public InlineKeyboardMarkup startKeyboard() {
-        InlineKeyboardRow firstRow = new InlineKeyboardRow(
+        InlineKeyboardRow calculationRow = new InlineKeyboardRow(
                 button("📊 Рассчитать кредит", "/calculate")
         );
 
-        InlineKeyboardRow secondRow = new InlineKeyboardRow(
+        InlineKeyboardRow navigationRow = new InlineKeyboardRow(
                 button("📜 История", "/history"),
                 button("❓ Помощь", "/help")
         );
 
         return new InlineKeyboardMarkup(
-                List.of(firstRow, secondRow)
+                List.of(calculationRow, navigationRow)
         );
     }
 
     public InlineKeyboardMarkup helpKeyboard() {
-        InlineKeyboardRow firstRow = new InlineKeyboardRow(
+        InlineKeyboardRow calculationRow = new InlineKeyboardRow(
                 button("📊 Рассчитать кредит", "/calculate")
         );
 
-        InlineKeyboardRow secondRow = new InlineKeyboardRow(
+        InlineKeyboardRow historyRow = new InlineKeyboardRow(
                 button("📜 История", "/history")
         );
 
         return new InlineKeyboardMarkup(
-                List.of(firstRow, secondRow)
+                List.of(calculationRow, historyRow)
         );
     }
 
-    public InlineKeyboardMarkup calculationFinishedKeyboard() {
+    public InlineKeyboardMarkup newCalculationKeyboard() {
         InlineKeyboardRow row = new InlineKeyboardRow(
                 button("🔄 Новый расчёт", "/calculate")
         );
@@ -60,7 +60,7 @@ public class BotKeyboardFactory {
     }
 
     public InlineKeyboardMarkup paymentTypeKeyboard() {
-        InlineKeyboardRow paymentTypes = new InlineKeyboardRow(
+        InlineKeyboardRow typesRow = new InlineKeyboardRow(
                 button("Аннуитетный", "1"),
                 button("Дифференцированный", "2")
         );
@@ -70,7 +70,7 @@ public class BotKeyboardFactory {
         );
 
         return new InlineKeyboardMarkup(
-                List.of(paymentTypes, cancelRow)
+                List.of(typesRow, cancelRow)
         );
     }
 

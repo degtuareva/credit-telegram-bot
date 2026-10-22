@@ -1,895 +1,1627 @@
 # Credit Telegram Bot
 
-![Java](https://img.shields.io/badge/Java-21-orange?logo=openjdk)
-![Spring Boot](https://img.shields.io/badge/Spring%20Boot-3.5-green?logo=springboot)
-![Telegram Bots](https://img.shields.io/badge/Telegram-Bot%20API-blue?logo=telegram)
-![Maven](https://img.shields.io/badge/Maven-3.9-red?logo=apachemaven)
-![License](https://img.shields.io/badge/License-Educational-lightgrey)
+Telegram-бот для расчёта графиков погашения кредита, сохранения истории запросов и просмотра менеджерской аналитики.
 
-Telegram-бот для расчёта графиков погашения кредитов с поддержкой аннуитетных и дифференцированных платежей.
+Проект поддерживает пошаговый диалог в Telegram. Дополнительно предусмотрено развитие приложения до Telegram Mini App с интерфейсом на React и REST API на Spring Boot.
 
-Проект разработан в учебных целях и демонстрирует применение принципов:
+Оба интерфейса используют общую бизнес-логику расчётов и общее хранилище данных.
 
-- Abstraction;
-- Composition;
-- Low Coupling;
-- High Cohesion;
-- SOLID;
-- DRY;
-- KISS;
-- YAGNI.
+> Расчёты носят справочный характер и не являются кредитным предложением банка. 
+> Итоговые условия кредитования определяются конкретной финансовой организацией.
 
 ---
 
 ## Содержание
 
-- [Описание проекта](#описание-проекта)
-- [Цель и задачи](#цель-и-задачи)
+- [Статус проекта](#статус-проекта)
 - [Возможности](#возможности)
 - [Технологии](#технологии)
 - [Архитектура](#архитектура)
 - [Структура проекта](#структура-проекта)
-- [Принципы проектирования](#принципы-проектирования)
-- [Алгоритмы расчёта](#алгоритмы-расчёта)
-- [Быстрый запуск](#быстрый-запуск)
-- [Настройка конфигурации](#настройка-конфигурации)
-- [Использование бота](#использование-бота)
-- [Хранение данных](#хранение-данных)
-- [Роли пользователей](#роли-пользователей)
+- [Требования](#требования)
+- [Подготовка Telegram-бота](#подготовка-telegram-бота)
+- [Настройка окружения](#настройка-окружения)
+- [Запуск PostgreSQL](#запуск-postgresql)
+- [Запуск backend](#запуск-backend)
+- [Работа с Telegram-ботом](#работа-с-telegram-ботом)
+- [Telegram Mini App](#telegram-mini-app)
+- [REST API Mini App](#rest-api-mini-app)
+- [Авторизация и разграничение доступа](#авторизация-и-разграничение-доступа)
+- [База данных и миграции](#база-данных-и-миграции)
+- [Расчёт кредита](#расчёт-кредита)
 - [Тестирование](#тестирование)
+- [Сборка приложения](#сборка-приложения)
+- [Диагностика ошибок](#диагностика-ошибок)
 - [Безопасность](#безопасность)
-- [Возможные улучшения](#возможные-улучшения)
-- [Лицензия](#лицензия)
+- [Ограничения](#ограничения)
+- [Планы развития](#планы-развития)
 
 ---
 
-## Описание проекта
+## Статус проекта
 
-Пользователям часто сложно самостоятельно рассчитать график погашения кредита с учётом суммы, срока, процентной ставки и
-типа платежа.
+### Существующий интерфейс Telegram-бота
 
-Менеджеры компании также не имеют удобного инструмента для анализа интересов клиентов и популярных параметров кредитов.
+- Пошаговый ввод параметров кредита.
+- Расчёт аннуитетного графика.
+- Расчёт дифференцированного графика.
+- Сохранение кредитных запросов.
+- Просмотр личной истории.
+- Вход менеджера.
+- Просмотр менеджерской аналитики.
+- Отмена текущего диалога.
 
-Данный проект решает обе задачи с помощью Telegram-бота, который:
+### Рефакторинг Telegram-слоя
 
-- принимает параметры кредита;
-- рассчитывает график платежей;
-- сохраняет запрос пользователя;
-- предоставляет историю расчётов;
-- формирует статистику для менеджеров.
+Предусмотрено разделение Telegram-части на:
 
----
+- координатор входящих обновлений;
+- обработчик команд;
+- обработчик шагов диалога;
+- парсер пользовательского ввода;
+- фабрику клавиатур;
+- форматтер сообщений;
+- отправщик сообщений.
 
-## Цель и задачи
+### Расширение Mini App
 
-### Цель проекта
+Следующий этап развития:
 
-Разработать Telegram-бота для автоматизированного расчёта кредитных графиков и анализа пользовательских запросов.
+- React-интерфейс кредитного калькулятора;
+- REST API для расчётов и истории;
+- серверная проверка данных авторизации Telegram;
+- открытие приложения кнопкой меню бота;
+- единая история расчётов из чата и Mini App.
 
-### Задачи проекта
-
-- Реализовать Telegram-бота на Java.
-- Добавить пошаговый диалог с пользователем.
-- Реализовать аннуитетную схему расчёта.
-- Реализовать дифференцированную схему расчёта.
-- Сохранять параметры кредитных запросов.
-- Реализовать просмотр истории пользователя.
-- Добавить менеджерскую аналитику.
-- Реализовать фильтрацию запросов.
-- Обеспечить проверку входных данных.
-- Продемонстрировать применение принципов ООП и SOLID.
-- Подготовить документацию и тесты.
+> Разделы README, посвящённые Mini App, описывают целевую реализацию. 
+> Для их использования соответствующие классы backend и файлы frontend должны быть добавлены в проект.
 
 ---
 
 ## Возможности
 
-### Для пользователей
+### Для пользователя
 
-| Возможность               | Описание                                             |
-|---------------------------|------------------------------------------------------|
-| Расчёт кредита            | Ввод суммы, срока, ставки и типа платежа             |
-| Аннуитетный график        | Расчёт равных ежемесячных платежей                   |
-| Дифференцированный график | Расчёт платежей, уменьшающихся со временем           |
-| Детальный график          | Тело кредита, проценты, общий платёж и остаток долга |
-| История запросов          | Просмотр предыдущих расчётов пользователя            |
-| Валидация данных          | Проверка суммы, срока, ставки и типа платежа         |
+- Ввод суммы кредита.
+- Выбор срока от 1 до 360 месяцев.
+- Ввод годовой процентной ставки.
+- Выбор типа платежа:
+    - аннуитетный;
+    - дифференцированный.
+- Получение графика погашения.
+- Просмотр общей суммы выплат.
+- Просмотр переплаты.
+- Просмотр истории собственных запросов.
+- Отмена незавершённого диалога.
 
-### Для менеджеров
+### Для менеджера
 
-| Возможность          | Описание                                               |
-|----------------------|--------------------------------------------------------|
-| Общая статистика     | Количество всех кредитных запросов                     |
-| Статистика по типам  | Популярность аннуитетных и дифференцированных платежей |
-| Статистика по срокам | Анализ популярных сроков кредитования                  |
-| Статистика по суммам | Анализ наиболее часто запрашиваемых сумм               |
-| Фильтрация           | Поиск запросов по сумме и типу платежа                 |
-| Ограниченный доступ  | Доступ к аналитике только для менеджеров               |
+- Проверка допуска по Telegram ID.
+- Вход по менеджерскому паролю.
+- Выход из менеджерской сессии.
+- Просмотр аналитики:
+    - общее количество запросов;
+    - распределение по типам платежей;
+    - популярный срок кредита.
+
+### Для Mini App
+
+После внедрения веб-интерфейса:
+
+- заполнение параметров кредита в форме;
+- отображение графика в таблице;
+- просмотр последних 50 личных запросов;
+- авторизация через подписанные данные Telegram;
+- сохранение расчётов в общей базе приложения.
 
 ---
 
 ## Технологии
 
-- Java 21;
-- Spring Boot 3.5;
-- Telegram Bots API;
-- TelegramBots Spring Boot Starter;
-- Maven;
-- Java Collections Framework;
-- BigDecimal для денежных расчётов;
-- JUnit 5 для тестирования;
-- PostgreSQL — планируемое или подключаемое постоянное хранилище;
-- Flyway — управление миграциями базы данных.
+### Backend
 
-TelegramBots Spring Boot Starter автоматически регистрирует Spring-компонент бота при запуске приложения и поддерживает
-режим long polling. [119]
+- Java 21.
+- Spring Boot 3.5.0.
+- Spring Data JPA.
+- Hibernate.
+- PostgreSQL 16.
+- Flyway.
+- TelegramBots с long polling.
+- Maven.
+
+### Frontend Mini App
+
+- React.
+- Vite.
+- JavaScript.
+- CSS.
+- Telegram Mini Apps JavaScript API.
+
+### Инфраструктура
+
+- Docker.
+- Docker Compose.
+- HTTPS-туннель для локальной демонстрации Mini App.
+
+Для REST API дополнительно используются:
+
+- Spring Web;
+- Jakarta Bean Validation.
+
+Точные версии зависимостей указаны в `pom.xml` и `mini-app/package.json`.
 
 ---
 
 ## Архитектура
 
-Проект построен по слоистой архитектуре.
+### Telegram-бот
 
 ```text
-┌──────────────────────────────┐
-│      Telegram Bot Layer      │
-│  CreditTelegramBot           │          │
-└──────────────┬───────────────┘
-               │
-               ▼
-┌──────────────────────────────┐
-│       Service Layer          │
-│  CreditService               │
-│  HistoryService              │
-│  AnalyticsService            │
-└──────────────┬───────────────┘
-               │
-       ┌───────┴────────┐
-       ▼                ▼
-┌──────────────┐ ┌───────────────┐
-│ Calculator   │ │ Validation    │
-│ Layer        │ │ Layer         │
-└──────┬───────┘ └───────────────┘
-       │
-       ▼
-┌──────────────────────────────┐
-│      Repository Layer         │
-│  CreditRequestRepository      │
-│  InMemory / PostgreSQL        │
-└──────────────────────────────┘
+Telegram Update
+      ↓
+CreditTelegramBot
+      ↓
+CommandHandler / ConversationHandler
+      ↓
+CreditService / HistoryService / AnalyticsService
+      ↓
+CreditRequestRepository
+      ↓
+PostgreSQL
 ```
 
-### Основные слои
+### Telegram Mini App
 
-| Пакет         | Ответственность                           |
-|---------------|-------------------------------------------|
-| `bot`         | Telegram-команды и диалог с пользователем |
-| `calculator`  | Расчёт графиков платежей                  |
-| `domain`      | Модели предметной области                 |
-| `repository`  | Абстракция хранения данных                |
-| `service`     | Бизнес-логика, история и аналитика        |
-| `validation`  | Проверка входных параметров               |
-| `persistence` | Работа с JPA-сущностями и PostgreSQL      |
+```text
+Telegram
+      ↓
+React Mini App
+      ↓ HTTPS / JSON
+MiniAppController
+      ↓
+Проверка Telegram initData
+      ↓
+CreditService / HistoryService
+      ↓
+CreditRequestRepository
+      ↓
+PostgreSQL
+```
+
+### Принцип разделения ответственности
+
+Telegram-слой не должен содержать формулы кредитного расчёта.
+
+React-интерфейс не выполняет финансовые расчёты самостоятельно.
+Он отправляет параметры на backend и отображает полученный результат.
+
+Бизнес-логика находится в сервисах и калькуляторах. 
+Поэтому расчёт из чата и расчёт из Mini App используют один алгоритм.
+
+### Основные компоненты
+
+| Компонент | Назначение |
+|---|---|
+| `CreditTelegramBot` | Приём обновлений Telegram и маршрутизация |
+| `CommandHandler` | Обработка команд |
+| `ConversationHandler` | Обработка шагов диалога |
+| `ConversationService` | Хранение пользовательских сессий |
+| `UserSession` | Параметры текущего диалога |
+| `InputParser` | Преобразование и проверка текстового ввода |
+| `BotKeyboardFactory` | Создание inline-клавиатур |
+| `BotMessageFormatter` | Формирование текстовых ответов |
+| `TelegramMessageSender` | Отправка сообщений и разбиение длинных текстов |
+| `CreditService` | Запуск расчёта и сохранение запроса |
+| `HistoryService` | Получение истории пользователя |
+| `AnalyticsService` | Получение статистики |
+| `ManagerAuthService` | Проверка менеджерского доступа |
+| `PaymentCalculatorFactory` | Выбор алгоритма расчёта |
+| `MiniAppController` | REST API веб-интерфейса |
+| `TelegramInitDataService` | Проверка авторизации Mini App |
 
 ---
 
 ## Структура проекта
 
+Целевая структура после рефакторинга и подключения Mini App:
+
 ```text
-src
-├── main
-│   ├── java
-│   │   └── com
-│   │       └── example
-│   │           └── creditbot
-│   │               │   CreditBotApplication.java
-│   │               │
-│   │               +---bot
-│   │               │       ConversationService.java
-│   │               │       ConversationStep.java
-│   │               │       CreditTelegramBot.java
-│   │               │       UserSession.java
-│   │               │
-│   │               +---calculator
-│   │               │       AnnuityPaymentCalculator.java
-│   │               │       DifferentialPaymentCalculator.java
-│   │               │       PaymentCalculator.java
-│   │               │       PaymentCalculatorFactory.java
-│   │               │
-│   │               +---domain
-│   │               │       CreditRequest.java
-│   │               │       CreditSchedule.java
-│   │               │       Payment.java
-│   │               │       PaymentType.java
-│   │               │
-│   │               +---persistence
-│   │               │   │   PostgresCreditRequestRepository.java
-│   │               │   │
-│   │               │   +---entity
-│   │               │   │       CreditRequestEntity.java
-│   │               │   │
-│   │               │   \---repository
-│   │               │           CreditRequestJpaRepository.java
-│   │               │
-│   │               +---repository
-│   │               │       CreditRequestRepository.java
-│   │               │       InMemoryCreditRequestRepository.java
-│   │               │
-│   │               +---security
-│   │               │       ManagerAuthService.java
-│   │               │       ManagerSession.java
-│   │               │
-│   │               +---service
-│   │               │       AnalyticsService.java
-│   │               │       CreditService.java
-│   │               │       HistoryService.java
-│   │               │
-│   │               \---validation
-│   │                       CreditRequestValidator.java
-│   │
-│   \---resources
-│       │   application-dev.yml
-│       │   application.yml
-│       │
-│       \---db
-│           \---migration
-│                   V1__create_credit_requests.sql
-│
-\---test
-    \---java
-        \---com
-            \---example
-                \---creditbot
-                    +---calculator
-                    │       AnnuityPaymentCalculatorTest.java
-                    │       DifferentialPaymentCalculatorTest.java
-                    │
-                    \---validation
-                            CreditRequestValidatorTest.java
+credit-telegram-bot/
+├── src/
+│   ├── main/
+│   │   ├── java/com/example/creditbot/
+│   │   │   ├── CreditBotApplication.java
+│   │   │   ├── bot/
+│   │   │   │   ├── CreditTelegramBot.java
+│   │   │   │   ├── ConversationService.java
+│   │   │   │   ├── ConversationStep.java
+│   │   │   │   ├── UserSession.java
+│   │   │   │   ├── handler/
+│   │   │   │   ├── keyboard/
+│   │   │   │   ├── message/
+│   │   │   │   └── support/
+│   │   │   ├── calculator/
+│   │   │   │   ├── PaymentCalculator.java
+│   │   │   │   ├── AnnuityPaymentCalculator.java
+│   │   │   │   ├── DifferentialPaymentCalculator.java
+│   │   │   │   └── PaymentCalculatorFactory.java
+│   │   │   ├── config/
+│   │   │   │   └── TelegramConfig.java
+│   │   │   ├── domain/
+│   │   │   │   ├── CreditRequest.java
+│   │   │   │   ├── CreditSchedule.java
+│   │   │   │   ├── Payment.java
+│   │   │   │   └── PaymentType.java
+│   │   │   ├── persistence/
+│   │   │   │   ├── entity/
+│   │   │   │   ├── repository/
+│   │   │   │   └── PostgresCreditRequestRepository.java
+│   │   │   ├── repository/
+│   │   │   │   ├── CreditRequestRepository.java
+│   │   │   │   └── InMemoryCreditRequestRepository.java
+│   │   │   ├── security/
+│   │   │   │   └── ManagerAuthService.java
+│   │   │   ├── service/
+│   │   │   └── web/
+│   │   │       ├── MiniAppController.java
+│   │   │       ├── MiniAppExceptionHandler.java
+│   │   │       ├── dto/
+│   │   │       └── security/
+│   │   └── resources/
+│   │       ├── application.yml
+│   │       ├── db/migration/
+│   │       └── static/
+│   └── test/
+├── credit-bot-mini-app/
+│   ├── src/
+│   │   ├── App.jsx
+│   │   ├── App.css
+│   │   ├── api.js
+│   │   └── main.jsx
+│   ├── index.html
+│   ├── package.json
+│   ├── package-lock.json
+│   └── vite.config.js
+├── docker-compose.yml
+├── pom.xml
+├── .gitignore
+└── README.md
 ```
 
 ---
 
-## Принципы проектирования
+## Требования
 
-### Abstraction
+Для backend:
 
-Расчёт графика описывается интерфейсом:
+- JDK 21;
+- Maven;
+- Docker Desktop;
+- доступ к Telegram API;
+- токен Telegram-бота.
 
-```java
-public interface PaymentCalculator {
+Для frontend:
 
-    CreditSchedule calculate(CreditRequest request);
-}
-```
+- Node.js версии, совместимой с установленной версией Vite;
+- npm.
 
-`CreditService` работает с интерфейсом и не зависит от конкретной формулы.
+Для проверки Mini App внутри Telegram:
 
-### Composition
+- публичный HTTPS-адрес;
+- работающий backend;
+- настроенная кнопка меню бота.
 
-`CreditService` состоит из независимых компонентов:
+### Проверка окружения
 
-```java
-private final CreditRequestRepository repository;
-private final PaymentCalculatorFactory calculatorFactory;
-private final CreditRequestValidator validator;
-```
-
-Объекты передаются через конструктор, что упрощает тестирование и замену реализаций.
-
-### Low Coupling
-
-`CreditTelegramBot` не знает, как рассчитываются проценты и как хранятся данные.
-
-Он взаимодействует с бизнес-логикой через сервисы:
-
-```text
-CreditTelegramBot → CreditService
-CreditTelegramBot → HistoryService
-CreditTelegramBot → AnalyticsService
-```
-
-### High Cohesion
-
-Каждый класс имеет одну основную ответственность:
-
-- `CreditTelegramBot` — обработка сообщений;
-- `CreditService` — расчёт и сохранение;
-- `CreditRequestValidator` — проверка данных;
-- `AnalyticsService` — аналитика;
-- `HistoryService` — история;
-- `PaymentCalculator` — формула расчёта.
-
-### SOLID
-
-- **Single Responsibility** — каждый класс отвечает за одну задачу.
-- **Open/Closed** — новый тип платежа можно добавить новым калькулятором.
-- **Liskov Substitution** — калькуляторы взаимозаменяемы через интерфейс.
-- **Interface Segregation** — интерфейсы содержат только необходимые методы.
-- **Dependency Inversion** — сервисы зависят от абстракций, а не от конкретных реализаций.
-
-### DRY
-
-Общие проверки вынесены в `CreditRequestValidator`.  
-Бизнес-логика не копируется в обработчиках команд.
-
-### KISS
-
-Проект использует простую слоистую архитектуру без преждевременного усложнения.
-
-### YAGNI
-
-Функции, которые не нужны текущей версии проекта, не добавляются без необходимости.
-
----
-
-## Алгоритмы расчёта
-
-### Аннуитетная схема
-
-При аннуитетной схеме размер регулярного платежа остаётся практически одинаковым на протяжении всего срока кредита.
-
-Формула:
-
-```text
-A = S × (i × (1 + i)^n) / ((1 + i)^n − 1)
-```
-
-где:
-
-- `A` — ежемесячный платёж;
-- `S` — сумма кредита;
-- `i` — месячная процентная ставка;
-- `n` — срок кредита в месяцах.
-
-Внутри приложения месячная ставка вычисляется так:
-
-```text
-i = годовая ставка / 12 / 100
-```
-
-### Дифференцированная схема
-
-При дифференцированной схеме основная часть долга делится равномерно:
-
-```text
-Основной платёж = Сумма кредита / Количество месяцев
-```
-
-Проценты рассчитываются от остатка задолженности:
-
-```text
-Проценты = Остаток долга × Месячная ставка
-```
-
-Поэтому в начале срока платёж больше, а затем постепенно уменьшается.
-
-### Денежные расчёты
-
-Для денежных значений используется `BigDecimal`, а не `double`, чтобы избежать ошибок округления.
-
-Все денежные значения округляются до двух знаков после запятой.
-
----
-
-## Быстрый запуск
-
-### Требования
-
-Перед запуском установите:
-
-- JDK 21 или выше;
-- Maven 3.9 или выше;
-- Telegram;
-- PostgreSQL — если используется постоянное хранилище.
-
-Проверка Java:
-
-```bash
+```powershell
 java -version
-```
-
-Проверка Maven:
-
-```bash
 mvn -version
+docker --version
+docker compose version
+node --version
+npm --version
 ```
 
-### 1. Создание Telegram-бота
+Команда `mvn -version` должна показывать JDK, подходящую для проекта.
 
-1. Откройте Telegram.
-2. Найдите `@BotFather`.
-3. Выполните команду `/newbot`.
-4. Укажите имя бота.
-5. Укажите username, который должен заканчиваться на `bot`.
-6. Скопируйте токен.
+---
 
-Токен нельзя публиковать в GitHub или README.
+## Подготовка Telegram-бота
 
-### 2. Клонирование проекта
+1. Откройте официальный `@BotFather` в Telegram.
+2. Отправьте `/newbot`.
+3. Укажите имя и username бота.
+4. Получите токен.
+5. Сохраните токен в переменной окружения `TELEGRAM_BOT_TOKEN`.
 
-```bash
-git clone [https://github.com/YOUR_USERNAME/credit-telegram-bot.git](https://github.com/YOUR_USERNAME/credit-telegram-bot.git)
+Не добавляйте токен в `application.yml`, Java-код, React-код или Git.
+
+Если токен был опубликован, отзовите его через BotFather и используйте новый.
+
+### Настройка списка команд
+
+В BotFather можно настроить команды через `/setcommands`:
+
+```text
+start - Главное меню
+help - Помощь
+calculate - Рассчитать кредит
+history - История запросов
+cancel - Отменить действие
+manager_login - Вход менеджера
+manager_logout - Выход менеджера
+analytics - Аналитика для менеджера
+```
+
+---
+
+## Настройка окружения
+
+### 1. Клонирование репозитория
+
+```powershell
+git clone <URL_РЕПОЗИТОРИЯ>
 cd credit-telegram-bot
 ```
 
-### 3. Установка зависимостей
+### 2. Переменные backend
 
-```bash
-mvn clean install
+Пример для PowerShell:
+
+```powershell
+$env:TELEGRAM_BOT_TOKEN="ВАШ_ТОКЕН"
+$env:TELEGRAM_BOT_USERNAME="USERNAME_ВАШЕГО_БОТА"
+
+$env:TELEGRAM_MANAGER_PASSWORD="ВАШ_МЕНЕДЖЕРСКИЙ_ПАРОЛЬ"
+$env:TELEGRAM_MANAGER_IDS="ВАШ_TELEGRAM_ID"
+
+$env:DB_URL="jdbc:postgresql://localhost:5432/credit_bot"
+$env:DB_USERNAME="credit_user"
+$env:DB_PASSWORD="credit_password"
 ```
 
-### 4. Запуск через Maven
+Переменные `$env:...` действуют в текущем PowerShell-сеансе. Запускайте Maven из этого же окна.
+
+Пример для Bash:
 
 ```bash
-mvn spring-boot:run
+export TELEGRAM_BOT_TOKEN="ВАШ_ТОКЕН"
+export TELEGRAM_BOT_USERNAME="USERNAME_ВАШЕГО_БОТА"
+
+export TELEGRAM_MANAGER_PASSWORD="ВАШ_МЕНЕДЖЕРСКИЙ_ПАРОЛЬ"
+export TELEGRAM_MANAGER_IDS="ВАШ_TELEGRAM_ID"
+
+export DB_URL="jdbc:postgresql://localhost:5432/credit_bot"
+export DB_USERNAME="credit_user"
+export DB_PASSWORD="credit_password"
 ```
 
-### 5. Сборка JAR-файла
+### Назначение переменных
+
+| Переменная | Назначение |
+|---|---|
+| `TELEGRAM_BOT_TOKEN` | Токен бота |
+| `TELEGRAM_BOT_USERNAME` | Username бота |
+| `TELEGRAM_MANAGER_PASSWORD` | Пароль менеджерского входа |
+| `TELEGRAM_MANAGER_IDS` | Разрешённые Telegram ID менеджеров |
+| `DB_URL` | JDBC URL базы |
+| `DB_USERNAME` | Пользователь PostgreSQL |
+| `DB_PASSWORD` | Пароль PostgreSQL |
+
+Формат нескольких ID должен соответствовать реализации `ManagerAuthService`. Для первоначального запуска достаточно одного ID.
+
+### Конфликтующие переменные Spring
+
+Проверьте, нет ли старых значений:
+
+```powershell
+Get-ChildItem Env:SPRING_DATASOURCE* -ErrorAction SilentlyContinue
+```
+
+Переменные:
+
+```text
+SPRING_DATASOURCE_URL
+SPRING_DATASOURCE_USERNAME
+SPRING_DATASOURCE_PASSWORD
+```
+
+могут переопределять свойства из `application.yml`.
+
+Если они нужны другим проектам, не обязательно удалять их постоянно. Для текущего окна можно явно задать:
+
+```powershell
+$env:SPRING_DATASOURCE_URL="jdbc:postgresql://localhost:5432/credit_bot"
+$env:SPRING_DATASOURCE_USERNAME="credit_user"
+$env:SPRING_DATASOURCE_PASSWORD="credit_password"
+```
+
+### Файл `.env`
+
+Сам по себе файл `.env` не означает, что Maven или Spring Boot автоматически загрузят из него переменные.
+
+В приведённом запуске backend использует переменные процесса. Если применяется `.env`, необходимо отдельно настроить способ его загрузки.
+
+---
+
+## Запуск PostgreSQL
+
+Пример `docker-compose.yml` для локальной разработки:
+
+```yaml
+services:
+  postgres:
+    image: postgres:16
+    container_name: credit-bot-postgres
+    restart: unless-stopped
+
+    environment:
+      POSTGRES_DB: credit_bot
+      POSTGRES_USER: credit_user
+      POSTGRES_PASSWORD: credit_password
+
+    ports:
+      - "127.0.0.1:5432:5432"
+
+    volumes:
+      - credit_bot_postgres_data:/var/lib/postgresql/data
+
+volumes:
+  credit_bot_postgres_data:
+```
+
+Проброс на `127.0.0.1` ограничивает доступ к порту базы локальным компьютером.
+
+Пароль `credit_password` приведён только для локального примера. 
+Для опубликованного окружения используйте отдельные секреты.
+
+### Запуск
+
+```powershell
+docker compose up -d
+```
+
+### Проверка состояния
+
+```powershell
+docker ps
+docker logs credit-bot-postgres
+```
+
+### Проверка базы внутри контейнера
+
+```powershell
+docker exec -it credit-bot-postgres `
+  psql -U credit_user -d credit_bot `
+  -c "SELECT current_database(), current_user;"
+```
+
+Ожидаемый результат:
+
+```text
+ current_database | current_user
+------------------+--------------
+ credit_bot       | credit_user
+```
+
+### Проверка TCP-подключения внутри контейнера
+
+```powershell
+docker exec -e PGPASSWORD=credit_password `
+  -it credit-bot-postgres `
+  psql -h 127.0.0.1 -p 5432 `
+  -U credit_user -d credit_bot `
+  -c "SELECT current_database(), current_user;"
+```
+
+Эта проверка обращается к PostgreSQL внутри контейнера. 
+Она не проверяет маршрут от Windows к опубликованному порту.
+
+### Остановка без удаления данных
+
+```powershell
+docker compose down
+```
+
+### Удаление данных
+
+```powershell
+docker compose down -v
+```
+
+> Команда `down -v` удаляет подключённые именованные volumes проекта. Не используйте её для обычного исправления ошибок подключения или если данные нужно сохранить.
+
+Изменение `POSTGRES_PASSWORD` в Compose не меняет пароль пользователя в уже инициализированной базе.
+
+---
+
+## Запуск backend
+
+### Сборка и тесты
+
+```powershell
+mvn clean test
+```
+
+### Запуск из PowerShell
+
+```powershell
+mvn spring-boot:run "-Dspring-boot.run.profiles=postgres"
+```
+
+Кавычки вокруг Maven-параметра позволяют избежать проблем разбора аргумента PowerShell.
+
+### Запуск из Bash
 
 ```bash
-mvn clean package
+mvn spring-boot:run -Dspring-boot.run.profiles=postgres
 ```
 
-### 6. Запуск JAR-файла
+### Запуск из IntelliJ IDEA
 
-```bash
-java -jar target/credit-telegram-bot-1.0.0.jar
+1. Откройте проект как Maven-проект.
+2. Выберите JDK 21.
+3. Откройте конфигурацию запуска `CreditBotApplication`.
+4. Укажите переменные окружения.
+5. При необходимости добавьте аргумент:
+
+```text
+--spring.profiles.active=postgres
 ```
 
-### 7. Запуск из IntelliJ IDEA
+6. Запустите приложение.
 
-1. Откройте класс `CreditBotApplication`.
-2. Нажмите зелёную кнопку `Run`.
-3. Дождитесь сообщения:
+Переменные, заданные в отдельном PowerShell после запуска IntelliJ IDEA,
+не обязательно будут доступны процессу, запущенному из IDE.
+
+### Проверка успешного запуска
+
+Ориентируйтесь на отсутствие ошибок и строку:
 
 ```text
 Started CreditBotApplication
 ```
 
-4. Откройте бота в Telegram.
-5. Отправьте команду `/start`.
+После подключения Spring Web приложение также должно запустить HTTP-сервер на порту `8080`.
+
+Не запускайте одновременно две копии приложения с одним токеном long polling.
 
 ---
 
-## Настройка конфигурации
+## Работа с Telegram-ботом
 
-### Вариант для разработки
+### Команды
 
-Файл:
+| Команда | Описание |
+|---|---|
+| `/start` | Главное меню |
+| `/help` | Инструкция |
+| `/calculate` | Начать новый расчёт |
+| `/history` | Личная история запросов |
+| `/cancel` | Отменить текущий диалог |
+| `/manager_login` | Вход менеджера |
+| `/manager_logout` | Выход менеджера |
+| `/analytics` | Менеджерская аналитика |
+
+### Пример расчёта
 
 ```text
-src/main/resources/application.yml
+/calculate
+500000
+36
+18.5
 ```
 
-```yaml
-telegram:
-  bot:
-    username: credit_olga_telegram_bot
-    token: "YOUR_TELEGRAM_BOT_TOKEN"
+После ввода параметров выберите тип платежа кнопкой.
 
-  manager-password: "YOUR_MANAGER_PASSWORD"
-  manager-ids:
-    - 123456789
+Бот возвращает:
+
+- общую сумму выплат;
+- переплату;
+- график по месяцам;
+- сумму основного долга в каждом платеже;
+- проценты;
+- остаток задолженности.
+
+### Проверка ввода
+
+В Telegram-диалоге:
+
+- сумма должна быть больше нуля;
+- срок — целое число от 1 до 360;
+- ставка не должна быть отрицательной;
+- тип платежа выбирается из доступных вариантов.
+
+Некорректное значение не должно переводить пользователя на следующий шаг.
+
+### Менеджерская авторизация
+
+```text
+/manager_login
 ```
 
-`123456789` необходимо заменить на числовой Telegram ID менеджера.
+Бот проверяет, входит ли Telegram ID в список разрешённых менеджеров, затем запрашивает пароль.
 
-### Рекомендуемый вариант
+После успешного входа:
 
-Spring Boot поддерживает внешнюю конфигурацию через переменные окружения, поэтому секреты можно не хранить внутри
-исходного кода и конфигурационных файлов. [232][233]
-
-```yaml
-telegram:
-  bot:
-    username: credit_olga_telegram_bot
-    token: ${TELEGRAM_BOT_TOKEN}
-
-  manager-password: ${TELEGRAM_MANAGER_PASSWORD}
-  manager-ids: ${TELEGRAM_MANAGER_IDS:}
+```text
+/analytics
 ```
 
-#### Windows PowerShell
+Для завершения сессии:
 
-```powershell
-$env:TELEGRAM_BOT_TOKEN="YOUR_TELEGRAM_BOT_TOKEN"
-$env:TELEGRAM_MANAGER_PASSWORD="YOUR_MANAGER_PASSWORD"
-$env:TELEGRAM_MANAGER_IDS="123456789"
-
-mvn spring-boot:run
-```
-
-#### Linux/macOS
-
-```bash
-export TELEGRAM_BOT_TOKEN="YOUR_TELEGRAM_BOT_TOKEN"
-export TELEGRAM_MANAGER_PASSWORD="YOUR_MANAGER_PASSWORD"
-export TELEGRAM_MANAGER_IDS="123456789"
-
-mvn spring-boot:run
+```text
+/manager_logout
 ```
 
 ---
 
-## Подключение PostgreSQL
+## Telegram Mini App
 
-Если используется PostgreSQL, добавьте в `application.yml`:
+Mini App добавляет графический интерфейс к существующему боту.
+
+### Экраны первой версии
+
+- Калькулятор.
+- Результат с графиком платежей.
+- Личная история запросов.
+
+### Предварительные условия backend
+
+Должны быть добавлены:
+
+- `spring-boot-starter-web`;
+- `spring-boot-starter-validation`;
+- `MiniAppController`;
+- `MiniAppExceptionHandler`;
+- `CalculationRequest`;
+- `TelegramInitDataService`;
+- `TelegramUser`.
+
+Если существует настройка:
+
+```yaml
+spring:
+  main:
+    web-application-type: none
+```
+
+её нужно убрать для запуска HTTP API.
+
+### Установка frontend
+
+Из корня проекта:
+
+```powershell
+cd mini-app
+npm install
+```
+
+Для воспроизводимой установки при актуальном `package-lock.json`:
+
+```powershell
+npm ci
+```
+
+### Локальная разработка
+
+Backend:
+
+```powershell
+mvn spring-boot:run "-Dspring-boot.run.profiles=postgres"
+```
+
+В другом окне:
+
+```powershell
+cd mini-app
+npm run dev
+```
+
+Адрес frontend:
+
+```text
+http://localhost:5173
+```
+
+### Vite proxy
+
+В разработке запросы `/api` перенаправляются на backend:
+
+```javascript
+import { defineConfig } from "vite";
+import react from "@vitejs/plugin-react";
+
+export default defineConfig({
+  plugins: [react()],
+
+  server: {
+    port: 5173,
+    strictPort: true,
+
+    proxy: {
+      "/api": {
+        target: "http://localhost:8080",
+        changeOrigin: true,
+      },
+    },
+  },
+});
+```
+
+Frontend использует относительные адреса:
+
+```text
+/api/mini-app/me
+/api/mini-app/calculations
+/api/mini-app/history
+```
+
+Не указывайте `http://localhost:8080` как адрес API для Mini App на телефоне: 
+там `localhost` означает само устройство пользователя.
+
+### Открытие вне Telegram
+
+При открытии страницы обычным браузером интерфейс может отображаться, 
+но защищённые API-запросы не выполняются без действительного `initData`.
+
+Это предусмотренное поведение, а не ошибка.
+
+### Подключение SDK
+
+В `mini-app/index.html`:
+
+```html
+<script src="[https://telegram.org/js/telegram-web-app.js?64](https://telegram.org/js/telegram-web-app.js?64)"></script>
+```
+
+Скрипт подключается в `<head>` до модулей приложения.
+
+В React:
+
+```javascript
+const telegram = window.Telegram?.WebApp;
+
+telegram?.ready();
+telegram?.expand();
+```
+
+### Сборка frontend
+
+```powershell
+cd mini-app
+npm run build
+```
+
+Результат:
+
+```text
+mini-app/dist/
+```
+
+### Раздача React через Spring Boot
+
+Из корня проекта:
+
+```powershell
+New-Item -ItemType Directory `
+  -Force `
+  -Path src\main\resources\static
+```
+
+Скопируйте сборку:
+
+```powershell
+Copy-Item `
+  -Path mini-app\dist\* `
+  -Destination src\main\resources\static `
+  -Recurse `
+  -Force
+```
+
+Если в `static` уже есть собственные страницы, 
+проверьте их перед копированием: файл `index.html` может быть заменён.
+
+Перезапустите backend:
+
+```powershell
+mvn clean spring-boot:run "-Dspring-boot.run.profiles=postgres"
+```
+
+Приложение будет доступно:
+
+```text
+http://localhost:8080
+```
+
+Один сервер обслуживает:
+
+```text
+/                 → React
+/api/mini-app/*   → REST API
+```
+
+Для этой схемы отдельная настройка CORS между frontend и backend не требуется.
+
+### Подключение к Telegram через HTTPS-туннель
+
+При установленном и настроенном ngrok:
+
+```powershell
+ngrok http 8080
+```
+
+Используйте полученный публичный HTTPS-адрес.
+
+Туннель направляется на `8080`, потому что Spring Boot уже отдаёт React и API.
+
+### Кнопка меню
+
+В BotFather:
+
+1. Выполните `/setmenubutton`.
+2. Выберите бота.
+3. Укажите HTTPS-адрес приложения.
+4. Укажите текст кнопки, например `Калькулятор кредита`.
+
+Откройте личный чат с ботом и запустите приложение через кнопку меню.
+
+Если адрес туннеля изменился, обновите его в BotFather.
+
+### Обновление frontend
+
+После изменения React-кода для собранной версии:
+
+1. Выполните `npm run build`.
+2. Скопируйте `dist` в `resources/static`.
+3. Перезапустите или пересоберите backend.
+4. Закройте и заново откройте Mini App.
+
+Изменения в исходниках React не обновляют автоматически уже скопированную сборку.
+
+---
+
+## REST API Mini App
+
+Все перечисленные endpoints требуют заголовок:
+
+```http
+X-Telegram-Init-Data: <подписанные данные Telegram>
+```
+
+### Получить текущего пользователя
+
+```http
+GET /api/mini-app/me
+```
+
+Пример ответа:
+
+```json
+{
+  "id": 123456789,
+  "firstName": "Анна",
+  "username": "example_user"
+}
+```
+
+### Выполнить расчёт
+
+```http
+POST /api/mini-app/calculations
+Content-Type: application/json
+```
+
+Тело запроса:
+
+```json
+{
+  "amount": "500000.00",
+  "termMonths": 36,
+  "annualRate": "18.5",
+  "paymentType": "ANNUITY"
+}
+```
+
+Допустимые типы:
+
+```text
+ANNUITY
+DIFFERENTIAL
+```
+
+Backend возвращает `CreditSchedule`, включая:
+
+- `totalInterest`;
+- `totalPayment`;
+- `payments`.
+
+Каждый элемент `payments` содержит:
+
+- `month`;
+- `totalPayment`;
+- `principal`;
+- `interest`;
+- `remainingDebt`.
+
+Идентификатор пользователя не передаётся в JSON. Backend извлекает его из проверенного `initData`.
+
+### Получить историю
+
+```http
+GET /api/mini-app/history
+```
+
+В первой реализации возвращаются последние 50 запросов авторизованного пользователя.
+
+Параметр `userId` не требуется и не должен использоваться как доказательство личности.
+
+### Ограничения веб-формы
+
+В предложенном DTO:
+
+| Поле | Ограничение |
+|---|---|
+| Сумма | От 0,01 до 1 000 000 000 |
+| Точность суммы | До двух знаков после запятой |
+| Срок | От 1 до 360 месяцев |
+| Ставка | От 0 до 100% |
+| Точность ставки | До четырёх знаков после запятой |
+| Тип платежа | `ANNUITY` или `DIFFERENTIAL` |
+
+Эти ограничения должны быть согласованы с правилами бизнес-слоя и точностью колонок БД.
+
+### Ошибки API
+
+Пример:
+
+```json
+{
+  "message": "Срок должен быть не меньше 1 месяца."
+}
+```
+
+| Код | Значение |
+|---|---|
+| `400` | Некорректные параметры |
+| `401` | Нет действительного Telegram initData |
+| `500` | Внутренняя ошибка |
+
+Если произошла ошибка после отправки расчёта, проверьте историю перед повторным нажатием: операция могла сохраниться до сбоя ответа.
+
+---
+
+## Авторизация и разграничение доступа
+
+### Пользователь Mini App
+
+1. Telegram открывает приложение.
+2. React получает `Telegram.WebApp.initData`.
+3. React отправляет `initData` backend.
+4. Backend проверяет подпись.
+5. Backend проверяет `auth_date`.
+6. Backend извлекает Telegram ID.
+7. Операции выполняются от имени проверенного пользователя.
+
+### Проверка подписи
+
+В предложенной реализации используется HMAC-SHA256.
+
+Токен бота хранится только на backend и не передаётся в браузер.
+
+Нельзя считать проверкой авторизации:
+
+```javascript
+window.Telegram.WebApp.initDataUnsafe.user.id
+```
+
+или произвольный ID из тела запроса.
+
+### Срок действия
+
+В первой версии:
+
+```yaml
+mini-app:
+  auth:
+    max-age-seconds: 3600
+```
+
+После истечения срока приложение нужно закрыть и открыть заново.
+
+Это ограничение конкретной реализации backend, а не универсальное время жизни всех Telegram Mini Apps.
+
+### Менеджерские endpoints
+
+Менеджерская аналитика Mini App пока не входит в базовую реализацию.
+
+При её добавлении права необходимо проверять на backend. Скрытие вкладки в React не защищает API.
+
+---
+
+## База данных и миграции
+
+### Подключение
 
 ```yaml
 spring:
   datasource:
     url: ${DB_URL:jdbc:postgresql://localhost:5432/credit_bot}
-    username: ${DB_USERNAME:postgres}
-    password: ${DB_PASSWORD:postgres}
+    username: ${DB_USERNAME:credit_user}
+    password: ${DB_PASSWORD:credit_password}
     driver-class-name: org.postgresql.Driver
 
   jpa:
     hibernate:
       ddl-auto: validate
     open-in-view: false
-    properties:
-      hibernate:
-        format_sql: true
 
   flyway:
     enabled: true
     locations: classpath:db/migration
 ```
 
-Переменные окружения:
+### Миграции
 
-```bash
-export DB_URL="jdbc:postgresql://localhost:5432/credit_bot"
-export DB_USERNAME="postgres"
-export DB_PASSWORD="postgres"
-```
-
-Для учебного варианта можно использовать `InMemoryCreditRequestRepository`. Однако данные такого хранилища исчезают
-после остановки приложения.
-
-Для дипломной версии рекомендуется PostgreSQL, так как он обеспечивает постоянное хранение истории запросов и аналитики.
-
----
-
-## Использование бота
-
-### Команды пользователя
-
-| Команда      | Назначение                            |
-|--------------|---------------------------------------|
-| `/start`     | Приветствие и список доступных команд |
-| `/calculate` | Запуск расчёта кредита                |
-| `/history`   | История запросов пользователя         |
-| `/help`      | Инструкция по использованию           |
-
-### Команды менеджера
-
-| Команда          | Назначение                   |
-|------------------|------------------------------|
-| `/analytics`     | Общая статистика по запросам |
-| `/filter`        | Фильтрация запросов          |
-| `/manager_login` | Авторизация менеджера        |
-
-Доступ к менеджерским командам должен проверяться по Telegram ID или через отдельный механизм авторизации.
-
-### Пример диалога
+Каталог:
 
 ```text
-Пользователь: /calculate
-
-Бот: Введите сумму кредита:
-
-Пользователь: 1000000
-
-Бот: Введите срок кредита в месяцах:
-
-Пользователь: 60
-
-Бот: Введите годовую процентную ставку:
-
-Пользователь: 12
-
-Бот: Выберите тип платежа:
-1 — аннуитетный
-2 — дифференцированный
-
-Пользователь: 1
-
-Бот:
-График платежей
-Переплата: 33673.12
-Общая сумма выплат: 1033673.12
-
-Месяц 1: ...
-Месяц 2: ...
+src/main/resources/db/migration
 ```
+
+Имена файлов:
+
+```text
+V1__описание.sql
+V2__описание.sql
+```
+
+После применения миграции не изменяйте её содержимое в общей базе. Для изменения схемы создавайте следующую миграцию.
+
+### Проверка таблиц
+
+```powershell
+docker exec -it credit-bot-postgres `
+  psql -U credit_user -d credit_bot -c "\dt"
+```
+
+### Проверка истории Flyway
+
+```powershell
+docker exec -it credit-bot-postgres `
+  psql -U credit_user -d credit_bot `
+  -c "SELECT installed_rank, version, description, success FROM flyway_schema_history ORDER BY installed_rank;"
+```
+
+### Ответственность инструментов
+
+- Flyway изменяет схему БД.
+- Hibernate при `ddl-auto: validate` проверяет соответствие сущностей схеме.
+- PostgreSQL хранит данные.
+- Docker volume сохраняет данные независимо от пересоздания контейнера.
+
+Flyway не исправляет неверный пароль подключения и не заменяет создание самой базы PostgreSQL.
 
 ---
 
-## Хранение данных
+## Расчёт кредита
 
-### In-memory-режим
+### Аннуитетный платёж
 
-В учебной версии для хранения могут использоваться:
+При положительной месячной ставке:
 
-- `ArrayList`;
-- `HashMap`;
-- `ConcurrentHashMap`.
+```text
+A = S × r × (1 + r)^n / ((1 + r)^n − 1)
+```
 
-Преимущества:
+Где:
 
-- простая реализация;
-- не требуется отдельная база;
-- удобно для демонстрации архитектуры.
+- `A` — платёж;
+- `S` — сумма кредита;
+- `r` — месячная ставка в долях единицы;
+- `n` — количество месяцев.
 
-Недостаток:
+Годовая ставка переводится в месячную:
 
-- данные теряются после перезапуска приложения.
+```text
+r = annualRate / 100 / 12
+```
 
-### PostgreSQL-режим
+Для нулевой ставки требуется отдельная ветка:
 
-Для дипломной или production-версии рекомендуется PostgreSQL.
+```text
+A = S / n
+```
 
-Преимущества:
+### Дифференцированный платёж
 
-- постоянное хранение данных;
-- поддержка фильтрации и сортировки;
-- индексы;
-- возможность масштабирования;
-- сохранение истории после перезапуска приложения.
+Основной долг распределяется по сроку, а проценты начисляются на остаток.
 
-Абстракция репозитория позволяет заменить in-memory-реализацию на PostgreSQL без
-изменения `CreditService`, `HistoryService` и `AnalyticsService`.
+```text
+Платёж = часть основного долга + проценты за месяц
+```
+
+По мере уменьшения остатка задолженности сумма процентов снижается.
+
+### Денежные значения
+
+Целевой подход — использовать `BigDecimal` для денежных вычислений, явно задавая точность и правила округления.
+
+Если в текущем аннуитетном алгоритме ещё используется `double`, переход на полностью десятичный расчёт остаётся отдельной задачей.
+
+React не должен дублировать формулы backend.
+
+### Округление
+
+Необходимо проверять:
+
+- точность промежуточных вычислений;
+- округление итогового платежа;
+- корректировку последнего платежа;
+- погашение остатка долга;
+- согласованность суммы платежей с итогами графика.
+
+В данном проекте месячная модель расчёта не должна автоматически трактоваться как точное воспроизведение банковского договора с учётом календарных дней, комиссий и дополнительных услуг.
 
 ---
 
 ## Тестирование
 
-Для запуска тестов:
+### Автоматические тесты
 
-```bash
-mvn test
+```powershell
+mvn clean test
 ```
 
-### Проверяемые сценарии
+### Проверка сборки frontend
 
-- Расчёт аннуитетного графика.
-- Расчёт дифференцированного графика.
-- Нулевая процентная ставка.
-- Корректное округление денежных значений.
-- Остаток долга равен нулю после последнего платежа.
-- Отрицательная или нулевая сумма.
-- Некорректный срок.
-- Некорректная процентная ставка.
-- Неизвестный тип платежа.
-- Сохранение кредитного запроса.
-- Получение истории пользователя.
-- Формирование аналитики.
-- Ограничение доступа к командам менеджера.
+```powershell
+cd mini-app
+npm ci
+npm run build
+```
 
-### Пример тестовых данных
+Успешная сборка frontend не заменяет функциональные тесты.
+
+### Рекомендуемые тесты калькуляторов
+
+- Нулевая ставка.
+- Один месяц.
+- Максимальный допустимый срок.
+- Отрицательная сумма.
+- Отрицательная ставка.
+- Сумма частей основного долга.
+- Нулевой остаток после последнего платежа.
+- Согласованность итогов графика.
+
+### Рекомендуемые тесты Telegram-слоя
+
+- Неверная сумма не меняет шаг.
+- Неверный срок не меняет шаг.
+- Неверная ставка не меняет шаг.
+- `/cancel` очищает сессию.
+- `/start` возвращает меню.
+- Недопущенный пользователь не проходит менеджерский вход.
+- Аналитика недоступна без авторизации.
+- Длинный график разбивается на сообщения.
+
+### Рекомендуемые тесты Mini App
+
+- Запрос без `initData` получает `401`.
+- Неверная подпись получает `401`.
+- Просроченный `initData` получает `401`.
+- Подмена пользователя нарушает подпись.
+- Некорректный запрос получает `400`.
+- Пользователь получает только собственную историю.
+- Расчёт из Mini App виден в истории бота.
+- Ошибки backend отображаются в интерфейсе.
+
+### Ручной сценарий
 
 ```text
-Сумма: 100000
-Срок: 12 месяцев
-Ставка: 12%
-Тип: аннуитетный
+/start
+/calculate
+500000
+36
+18.5
 ```
 
-Ожидаемый результат:
+Выберите тип платежа.
 
-- 12 платежей;
-- сумма основного долга равна 100000;
-- остаток долга после последнего платежа равен 0;
-- общая сумма выплат больше суммы кредита при ненулевой ставке.
+Затем:
+
+```text
+/history
+```
+
+После внедрения Mini App откройте его кнопкой меню и проверьте ту же историю.
 
 ---
 
-## Обработка ошибок
+## Сборка приложения
 
-Бот должен корректно обрабатывать:
+### Только backend
 
-- пустые сообщения;
-- текст вместо числа;
-- отрицательную сумму;
-- нулевой срок;
-- срок больше 360 месяцев;
-- отрицательную ставку;
-- ставку больше 100%;
-- неправильный выбор типа платежа;
-- отсутствие данных для истории;
-- отсутствие прав менеджера.
-
-Пример ответа:
-
-```text
-Ошибка: Введите корректную сумму кредита
+```powershell
+mvn clean package
 ```
 
-После ошибки пользователь может повторить ввод, не начиная диалог заново.
+### Backend вместе с Mini App
+
+Сначала соберите frontend:
+
+```powershell
+cd mini-app
+npm ci
+npm run build
+cd ..
+```
+
+Скопируйте сборку:
+
+```powershell
+New-Item -ItemType Directory `
+  -Force `
+  -Path src\main\resources\static
+
+Copy-Item `
+  -Path mini-app\dist\* `
+  -Destination src\main\resources\static `
+  -Recurse `
+  -Force
+```
+
+Соберите JAR:
+
+```powershell
+mvn clean package
+```
+
+### Запуск JAR
+
+Для текущего имени и версии артефакта:
+
+```powershell
+java -jar target\credit-telegram-bot-1.0.0.jar `
+  --spring.profiles.active=postgres
+```
+
+Если версия в `pom.xml` изменилась, используйте фактическое имя JAR.
+
+Перед запуском должны быть заданы переменные окружения.
+
+---
+
+## Диагностика ошибок
+
+### `Unknown lifecycle phase ".run.profiles=postgres"`
+
+PowerShell некорректно передал Maven-параметр.
+
+Используйте:
+
+```powershell
+mvn spring-boot:run "-Dspring-boot.run.profiles=postgres"
+```
+
+### `Process terminated with exit code: 1`
+
+Это итоговое сообщение Maven, а не первопричина.
+
+Ищите выше:
+
+```text
+Caused by:
+Application run failed
+SQL State:
+```
+
+Сохранить лог:
+
+```powershell
+mvn spring-boot:run `
+  "-Dspring-boot.run.profiles=postgres" `
+  2>&1 | Tee-Object startup.log
+```
+
+Найти ключевые строки:
+
+```powershell
+Select-String `
+  -Path startup.log `
+  -Pattern "ERROR|Caused by|SQL State|Application run failed"
+```
+
+Перед публикацией лога проверьте, что в нём нет секретов.
+
+### `SQL State: 3D000`
+
+В экземпляре PostgreSQL, к которому обратилось приложение, не найдена указанная база.
+
+Проверьте:
+
+```powershell
+docker ps
+```
+
+```powershell
+docker exec -it credit-bot-postgres `
+  psql -U credit_user -d postgres -c "\l"
+```
+
+Также проверьте фактический URL:
+
+```powershell
+Write-Host "DB_URL=[$env:DB_URL]"
+Write-Host "SPRING_DATASOURCE_URL=[$env:SPRING_DATASOURCE_URL]"
+```
+
+Успешное подключение через `docker exec` доказывает наличие базы внутри контейнера, но не доказывает, что Java обращается к тому же серверу через порт Windows.
+
+### `SQL State: 28P01`
+
+PostgreSQL отклонил аутентификацию.
+
+Возможные причины:
+
+- неверный пароль;
+- подключение к другому экземпляру PostgreSQL;
+- переопределённые переменные окружения;
+- другие настройки запуска в IDE.
+
+Не удаляйте volume до проверки этих вариантов.
+
+### Смена пароля роли
+
+Откройте `psql`:
+
+```powershell
+docker exec -it credit-bot-postgres `
+  psql -U credit_user -d postgres
+```
+
+Внутри `psql`:
+
+```sql
+\password credit_user
+```
+
+Введите новый пароль дважды.
+
+Выйдите:
+
+```sql
+\q
+```
+
+После этого обновите пароль в окружении приложения.
+
+### PowerShell-команды введены внутри PostgreSQL
+
+Приглашение:
+
+```text
+postgres=#
+```
+
+означает, что открыта консоль PostgreSQL.
+
+Здесь выполняются SQL и команды `psql`, а не:
+
+```powershell
+$env:...
+Get-ChildItem ...
+```
+
+Если приглашение стало:
+
+```text
+postgres-#
+```
+
+очистите незавершённый запрос:
+
+```sql
+\r
+```
+
+Выйдите:
+
+```sql
+\q
+```
+
+Команды PowerShell выполняются после появления:
+
+```text
+PS ...>
+```
+
+### Проверка владельцев порта
+
+```powershell
+Get-NetTCPConnection `
+  -LocalPort 5432 `
+  -State Listen `
+  -ErrorAction SilentlyContinue |
+  Select-Object LocalAddress, LocalPort, OwningProcess
+```
+
+Не делайте вывод о маршруте подключения только по наличию записи о пробросе порта в `docker ps`.
+
+### Mini App возвращает `401`
+
+Проверьте:
+
+- приложение открыто через Telegram;
+- передаётся `X-Telegram-Init-Data`;
+- backend использует токен того же бота;
+- срок авторизации не истёк;
+- системное время сервера корректно.
+
+### Mini App возвращает `404`
+
+Проверьте:
+
+- добавлен `MiniAppController`;
+- пакет находится внутри области сканирования Spring;
+- backend перезапущен;
+- frontend использует правильный путь `/api/mini-app`.
+
+### Mini App возвращает `403`
+
+Проверьте существующую конфигурацию Spring Security.
+
+Не отключайте безопасность всего приложения без понимания причины.
+
+### На телефоне не работает API
+
+Не используйте `localhost` компьютера как адрес API в опубликованном frontend.
+
+В описанной схеме используются относительные `/api/...`, а React и backend доступны по одному HTTPS-адресу.
+
+### Открывается старая версия интерфейса
+
+Повторите:
+
+```powershell
+cd mini-app
+npm run build
+cd ..
+```
+
+Затем скопируйте `dist` в `resources/static` и перезапустите backend.
 
 ---
 
 ## Безопасность
 
-- Не храните Telegram-токен в Git.
-- Не храните пароль менеджера в открытом репозитории.
-- Используйте переменные окружения.
-- Добавьте секретные файлы в `.gitignore`.
-- При утечке токена перевыпустите его через `@BotFather`.
-- Не выводите токены и пароли в логи.
-- Ограничьте менеджерские команды по Telegram ID.
-- Не передавайте персональные данные пользователей в открытые логи.
+### Не хранить в репозитории
 
-Пример `.gitignore`:
+- токен бота;
+- менеджерский пароль;
+- реальные пароли БД;
+- `initData` пользователей;
+- локальные скрипты с секретами.
+
+### Пример `.gitignore`
 
 ```gitignore
+# Java
 target/
+
+# IntelliJ IDEA
 .idea/
 *.iml
 
+# Node.js
+mini-app/node_modules/
+mini-app/dist/
+
+# Local environment
 .env
+.env.*
+!.env.example
+
+# Local configuration
 application-local.yml
 
+# Scripts with secrets
+run-local.ps1
+run-credit-bot.ps1
+
+# Logs
 *.log
 ```
 
-Проверка перед публикацией:
+Решение о хранении сгенерированной React-сборки в `resources/static` принимается отдельно. В перспективе лучше собирать её автоматически в CI.
 
-```bash
-git status
-git diff --cached
-```
+### Если секрет опубликован
 
----
+1. Отзовите или замените его.
+2. Обновите окружение.
+3. Удалите секрет из исходников.
+4. При необходимости очистите историю Git.
+5. Не считайте обычный новый коммит достаточной защитой старого секрета.
 
-## Диаграмма классов
+### Права PostgreSQL
 
-```mermaid
-classDiagram
+Название `root` не является обязательным для PostgreSQL.
 
-    class CreditTelegramBot {
-        -TelegramClient telegramClient
-        -CreditService creditService
-        -HistoryService historyService
-        -AnalyticsService analyticsService
-        +consume(Update update)
-    }
+Для локального примера используется `credit_user`. Пользователь, создаваемый официальным образом через `POSTGRES_USER`, обладает повышенными правами; это не готовая модель минимальных привилегий для production.
 
-    class CreditService {
-        -CreditRequestRepository repository
-        -PaymentCalculatorFactory factory
-        -CreditRequestValidator validator
-        +calculateAndSave(CreditRequest)
-    }
+В опубликованном окружении желательно разделить:
 
-    class HistoryService {
-        -CreditRequestRepository repository
-        +getUserHistory(long)
-    }
+- владельца схемы и миграций;
+- пользователя приложения;
+- административный доступ.
 
-    class AnalyticsService {
-        -CreditRequestRepository repository
-        +totalRequests()
-        +paymentTypeStats()
-        +termStats()
-        +filter()
-    }
+### Менеджерский доступ
 
-    class CreditRequestValidator {
-        +validate(CreditRequest)
-    }
+Проверка прав выполняется на сервере.
 
-    class PaymentCalculator {
-        <<interface>>
-        +calculate(CreditRequest) CreditSchedule
-    }
+Нельзя защищать аналитику только скрытием кнопки или вкладки в React.
 
-    class AnnuityPaymentCalculator {
-        +calculate(CreditRequest) CreditSchedule
-    }
+### Сетевая доступность
 
-    class DifferentialPaymentCalculator {
-        +calculate(CreditRequest) CreditSchedule
-    }
+Для production:
 
-    class PaymentCalculatorFactory {
-        +getCalculator(PaymentType) PaymentCalculator
-    }
-
-    class CreditRequestRepository {
-        <<interface>>
-        +save(CreditRequest)
-        +findAll()
-        +findByTelegramUserId(long)
-    }
-
-    class InMemoryCreditRequestRepository
-
-    CreditTelegramBot --> CreditService
-    CreditTelegramBot --> HistoryService
-    CreditTelegramBot --> AnalyticsService
-
-    CreditService --> CreditRequestValidator
-    CreditService --> CreditRequestRepository
-    CreditService --> PaymentCalculatorFactory
-
-    HistoryService --> CreditRequestRepository
-    AnalyticsService --> CreditRequestRepository
-
-    PaymentCalculatorFactory --> PaymentCalculator
-    PaymentCalculator <|.. AnnuityPaymentCalculator
-    PaymentCalculator <|.. DifferentialPaymentCalculator
-
-    CreditRequestRepository <|.. InMemoryCreditRequestRepository
-```
+- используйте HTTPS;
+- не публикуйте PostgreSQL без необходимости;
+- ограничьте доступ к административным интерфейсам;
+- настройте резервное копирование;
+- не используйте демонстрационные пароли.
 
 ---
 
-## Почему архитектура соответствует требованиям
+## Ограничения
 
-| Требование      | Реализация                                                 |
-|-----------------|------------------------------------------------------------|
-| Абстракция      | Интерфейсы `PaymentCalculator` и `CreditRequestRepository` |
-| Композиция      | Сервисы получают зависимости через конструктор             |
-| Factory pattern | `PaymentCalculatorFactory`                                 |
-| Low Coupling    | Сервисы зависят от интерфейсов                             |
-| High Cohesion   | Каждый класс отвечает за одну область                      |
-| SOLID           | Разделение ответственности и Dependency Injection          |
-| DRY             | Общая валидация в `CreditRequestValidator`                 |
-| KISS            | Простая слоистая архитектура                               |
-| YAGNI           | Нет лишних компонентов до появления требований             |
-| ООП             | Инкапсуляция, полиморфизм, интерфейсы и композиция         |
-
----
-
-## Возможные улучшения
-
-- Перевод хранилища на PostgreSQL.
-- Использование Flyway для миграций.
-- Экспорт графика в CSV или PDF.
-- Inline-кнопки Telegram вместо ручного ввода.
-- Досрочное погашение кредита.
-- Пересчёт графика после досрочного платежа.
-- Отдельная веб-панель менеджера.
-- Пагинация истории запросов.
-- Docker Compose для запуска приложения и PostgreSQL.
-- Testcontainers для интеграционных тестов.
-- Spring Security для отдельной панели менеджера.
-- Мониторинг с помощью Actuator.
-- Логирование через SLF4J.
-- CI/CD через GitHub Actions.
+- Состояние диалога хранится в памяти приложения.
+- После перезапуска незавершённые диалоги теряются.
+- Хранение сессий в `ConcurrentHashMap` не делает все операции над `UserSession` автоматически потокобезопасными.
+- Telegram-обработка рассчитана на существующую модель single-thread update consumer.
+- Минимальная версия Mini App проверяет `initData` на каждом запросе и требует переоткрытия после истечения срока.
+- История ограничена 50 записями в ответе.
+- В первой версии ограничение истории применяется после получения данных сервисом, а не как полноценная пагинация БД.
+- Идемпотентность сохранения расчёта пока не предусмотрена: повторный запрос может создать повторную запись.
+- Менеджерская аналитика Mini App не входит в базовую версию.
+- Backend и frontend собираются отдельными командами.
+- Локальный HTTPS-туннель зависит от работающего компьютера и не заменяет постоянный хостинг.
+- График является модельным расчётом и не учитывает все особенности банковских договоров.
 
 ---
 
-## Результаты проекта
+## Планы развития
 
-В результате разработан Telegram-бот, который:
+### Корректность и архитектура
 
-- принимает параметры кредита;
-- рассчитывает два типа графиков;
-- выводит детализацию по каждому месяцу;
-- проверяет корректность пользовательского ввода;
-- сохраняет запросы;
-- предоставляет историю пользователя;
-- формирует статистику для менеджеров;
-- демонстрирует применение принципов ООП, SOLID и слоистой архитектуры.
+- Согласовать ограничения Telegram-диалога, REST DTO и бизнес-слоя.
+- Завершить переход финансовых вычислений на `BigDecimal`.
+- Добавить тесты округления и последнего платежа.
+- Сохранить тонкий координатор Telegram-обновлений.
 
----
+### Аналитика
 
-## Лицензия
+- Добавить статистику по суммам.
+- Заменить повторные `findAll()` агрегирующими запросами.
+- Добавить менеджерский фильтр.
+- Добавить экспорт в CSV.
 
-Проект создан в учебных целях.
+### Mini App
 
-Использование кода допускается для обучения и демонстрации принципов разработки программного обеспечения.
+- Добавить фильтры личной истории.
+- Добавить менеджерскую аналитику с серверной проверкой прав.
+- Добавить графики погашения.
+- Добавить сравнение двух вариантов кредита.
+- Добавить пагинацию истории на уровне БД.
+- Добавить идемпотентность создания расчёта.
+- Добавить отдельную серверную сессию после Telegram-авторизации.
 
----
+### Инфраструктура
 
-## Автор
-
-**Ольга Дегтярева**
-
-GitHub: `https://github.com/degtuareva`
-
-Telegram-бот: `@credit_olga_telegram_bot`
+- Автоматизировать сборку React и включение в JAR.
+- Настроить CI.
+- Добавить интеграционные тесты PostgreSQL.
+- Настроить постоянный HTTPS-домен.
+- Настроить резервное копирование.
+- Подготовить отдельную конфигурацию production.
