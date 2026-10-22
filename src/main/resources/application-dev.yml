@@ -1,4 +1,0 @@
-telegram:
-  bot:
-    username: credit_olga_telegram_bot
-    token: ${TELEGRAM_BOT_TOKEN}
