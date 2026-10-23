@@ -8,6 +8,10 @@ export default defineConfig({
     port: 5173,
     strictPort: true,
 
+    allowedHosts: [
+      "jiffy-old-bubbly.ngrok-free.dev",
+    ],
+
     proxy: {
       "/api": {
         target: "http://localhost:8080",

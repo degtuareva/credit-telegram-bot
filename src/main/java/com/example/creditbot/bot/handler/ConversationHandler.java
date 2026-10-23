@@ -68,25 +68,20 @@ public class ConversationHandler {
         }
 
         switch (session.getStep()) {
-            case WAITING_AMOUNT ->
-                    handleAmount(chatId, input, session);
+            case WAITING_AMOUNT -> handleAmount(chatId, input, session);
 
-            case WAITING_TERM ->
-                    handleTerm(chatId, input, session);
+            case WAITING_TERM -> handleTerm(chatId, input, session);
 
-            case WAITING_RATE ->
-                    handleRate(chatId, input, session);
+            case WAITING_RATE -> handleRate(chatId, input, session);
 
-            case WAITING_PAYMENT_TYPE ->
-                    handlePaymentType(
-                            chatId,
-                            userId,
-                            input,
-                            session
-                    );
+            case WAITING_PAYMENT_TYPE -> handlePaymentType(
+                    chatId,
+                    userId,
+                    input,
+                    session
+            );
 
-            case WAITING_MANAGER_PASSWORD ->
-                    handleManagerPassword(chatId, userId, input);
+            case WAITING_MANAGER_PASSWORD -> handleManagerPassword(chatId, userId, input);
 
             case NONE -> sender.send(
                     chatId,
@@ -191,11 +186,11 @@ public class ConversationHandler {
             sender.send(
                     chatId,
                     """
-                    ✅ Авторизация успешно выполнена.
+                            ✅ Авторизация успешно выполнена.
 
-                    Теперь доступна команда:
-                    /analytics
-                    """
+                            Теперь доступна команда:
+                            /analytics
+                            """
             );
         } else {
             sender.send(

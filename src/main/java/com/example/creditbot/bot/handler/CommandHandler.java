@@ -62,11 +62,9 @@ public class CommandHandler {
 
             case "/history" -> history(chatId, userId);
 
-            case "/manager_login" ->
-                    managerLogin(chatId, userId, session);
+            case "/manager_login" -> managerLogin(chatId, userId, session);
 
-            case "/manager_logout" ->
-                    managerLogout(chatId, userId);
+            case "/manager_logout" -> managerLogout(chatId, userId);
 
             case "/analytics" -> analytics(chatId, userId);
 
@@ -151,11 +149,11 @@ public class CommandHandler {
             sender.send(
                     chatId,
                     """
-                    ⛔ Доступ запрещён.
+                            ⛔ Доступ запрещён.
 
-                    Для входа используйте:
-                    /manager_login
-                    """
+                            Для входа используйте:
+                            /manager_login
+                            """
             );
             return;
         }

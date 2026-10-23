@@ -17,9 +17,12 @@ function money(value) {
 }
 
 function paymentTypeLabel(value) {
-    return value === "ANNUITY"
-        ? "Аннуитетный"
-        : "Дифференцированный";
+    const labels = {
+        ANNUITY: "Аннуитетный",
+        DIFFERENTIAL: "Дифференцированный",
+    };
+
+    return labels[value] ?? "Неизвестный тип платежа";
 }
 
 export default function App() {
@@ -126,14 +129,15 @@ export default function App() {
     return (
         <main className="app">
             <header className="app-header">
-                <p className="eyebrow">Telegram Mini App</p>
-                <h1>Кредитный калькулятор</h1>
+                <p className="eyebrow">Финансы под контролем</p>
+                <h1>Кредитный помощник</h1>
 
-                {user && (
-                    <p className="muted">
-                        Здравствуйте, {user.firstName || "пользователь"}!
-                    </p>
-                )}
+                <p className="muted">
+                    {user
+                        ? `Здравствуйте, ${user.firstName || "пользователь"}! `
+                        : ""}
+                    Рассчитайте платёж и оцените переплату до оформления кредита.
+                </p>
             </header>
 
             {authLoading && (
@@ -220,7 +224,7 @@ export default function App() {
                             type="number"
                             min="0"
                             max="100"
-                            step="0.0001"
+                            step="0.01"
                             required
                             value={form.annualRate}
                             onChange={updateField}
