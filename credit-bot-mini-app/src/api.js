@@ -45,8 +45,9 @@ export function createCalculation(input) {
         method: "POST",
         body: JSON.stringify(input),
     });
+}
  export function loadManagerAnalytics(from,to){
      const  params=new URLSearchParams({from,to});
-     return request(`/manager/analytics?&{params}`);
+     return request(`/manager/analytics?&{params.toString}`);
  }
-}
+

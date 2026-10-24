@@ -2,3 +2,6 @@ telegram:
   bot:
     username: credit_olga_telegram_bot
     token: ${TELEGRAM_BOT_TOKEN}
+
+  manager-password: ${MANAGER_PASSWORD}
+  manager-ids: ${MANAGER_IDS:}

@@ -1,5 +1,5 @@
-import {useState} from "react";
-import {loadManagerAnalytics} from "./api.js";
+import { useState } from "react";
+import { loadManagerAnalytics } from "./api";
 
 const moneyFormatter = new Intl.NumberFormat("ru-RU", {
     style: "currency",
@@ -9,7 +9,7 @@ const moneyFormatter = new Intl.NumberFormat("ru-RU", {
 
 function localDateString(date) {
     const year = date.getFullYear();
-    const month = String(date.getMonth() + 1) / padStart(2, "0");
+    const month = String(date.getMonth() + 1).padStart(2, "0");
     const day = String(date.getDate()).padStart(2, "0");
 
     return `${year}-${month}-${day}`;
@@ -50,21 +50,22 @@ export default function ManagerAnalytics() {
             <h2>Менеджерская аналитика</h2>
 
             <p className="muted">
-                Перед загрузкой статистики войдите как менеджер в чате бота.
-                После этого нажмите "Показать".
+                Перед загрузкой статистики войдите как менеджер
+                в чате бота. После этого нажмите «Показать».
             </p>
+
             <form onSubmit={refresh}>
-                <Label htmlFor="analytics-from">С даты</Label>
+                <label htmlFor="analytics-from">С даты</label>
                 <input
-                    id="analytics-form"
+                    id="analytics-from"
                     type="date"
                     required
                     value={from}
                     disabled={loading}
-                    onChange={(event) => setFrom(
-                        event.target.value)}
+                    onChange={(event) => setFrom(event.target.value)}
                 />
-                <label htmlFor="analutics-to">По дату включительно</label>
+
+                <label htmlFor="analytics-to">По дату включительно</label>
                 <input
                     id="analytics-to"
                     type="date"
@@ -74,19 +75,22 @@ export default function ManagerAnalytics() {
                     disabled={loading}
                     onChange={(event) => setTo(event.target.value)}
                 />
+
                 <button
                     type="submit"
                     className="primary"
-                    disabled={loarding}
+                    disabled={loading}
                 >
-                    {loading?"Загружаем...":"Показать"}
+                    {loading ? "Загружаем…" : "Показать"}
                 </button>
             </form>
-            {error&&(
-                <p className="message error" role"alert">
+
+            {error && (
+                <p className="message error" role="alert">
                     {error}
-                    </p>
+                </p>
             )}
+
             {data && (
                 <>
                     <h3>Сводка за период</h3>
@@ -158,7 +162,7 @@ export default function ManagerAnalytics() {
                         </table>
                     </div>
                 </>
-                )}
+            )}
         </section>
     );
 }
