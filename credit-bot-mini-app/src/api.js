@@ -23,7 +23,9 @@ async function request(path, options = {}) {
 
     if (!response.ok) {
         throw new Error(
-            body?.message || `Ошибка запроса: ${response.status}`
+            body?.message ||
+            body?.detail||
+            `Ошибка запроса: ${response.status}`
         );
     }
 
@@ -44,3 +46,8 @@ export function createCalculation(input) {
         body: JSON.stringify(input),
     });
 }
+ export function loadManagerAnalytics(from,to){
+     const  params=new URLSearchParams({from,to});
+     return request(`/manager/analytics?&{params.toString}`);
+ }
+

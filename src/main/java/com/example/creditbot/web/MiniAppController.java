@@ -2,9 +2,11 @@ package com.example.creditbot.web;
 
 import com.example.creditbot.domain.CreditRequest;
 import com.example.creditbot.domain.CreditSchedule;
+import com.example.creditbot.security.ManagerAuthService;
 import com.example.creditbot.service.CreditService;
 import com.example.creditbot.service.HistoryService;
 import com.example.creditbot.web.dto.CalculationRequest;
+import com.example.creditbot.web.dto.MiniAppResponse;
 import com.example.creditbot.web.security.TelegramInitDataService;
 import com.example.creditbot.web.security.TelegramUser;
 import jakarta.validation.Valid;
@@ -21,25 +23,39 @@ public class MiniAppController {
     private final CreditService creditService;
     private final HistoryService historyService;
     private final TelegramInitDataService authService;
+    private final ManagerAuthService managerAuthService;
 
     public MiniAppController(
             CreditService creditService,
             HistoryService historyService,
-            TelegramInitDataService authService
+            TelegramInitDataService authService,
+            ManagerAuthService managerAuthService
     ) {
         this.creditService = creditService;
         this.historyService = historyService;
         this.authService = authService;
+        this.managerAuthService = managerAuthService;
     }
 
     @GetMapping("/me")
-    public TelegramUser me(
+    public MiniAppResponse me(
             @RequestHeader(
                     value = "X-Telegram-Init-Data",
                     required = false
             ) String initData
     ) {
-        return authService.authenticate(initData);
+       TelegramUser user=authService.authenticate(initData);
+       boolean manager=
+               managerAuthService.isAllowedManager(user.id());
+
+       return new MiniAppResponse(
+               user.id(),
+               user.firstName(),
+               user.username(),
+               manager,
+               manager&&managerAuthService.isAuthenticated(user.id())
+       );
+
     }
 
     @PostMapping("/calculations")

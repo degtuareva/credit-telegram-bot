@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import ManagerAnalytics from "./ManagerAnalytics.jsx";
 import {
     createCalculation,
     loadHistory,
@@ -184,6 +185,20 @@ export default function App() {
                 >
                     История
                 </button>
+                {user?.manager && (
+                    <button
+                        type="button"
+                        className={tab === "analytics" ? "active" : ""}
+                        disabled={loading}
+                        onClick={() => {
+                            setTab("analytics");
+                            setError("");
+                            setNotice("");
+                        }}
+                    >
+                        Аналитика
+                    </button>
+                )}
             </nav>
 
             {tab === "calculator" && (
@@ -345,6 +360,9 @@ export default function App() {
                         </div>
                     )}
                 </section>
+            )}
+            {tab === "analytics" && user?.manager && (
+                <ManagerAnalytics />
             )}
 
             <footer className="muted">
