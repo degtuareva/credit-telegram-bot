@@ -12,9 +12,6 @@ import java.time.LocalDateTime;
 
 /**
  * Сервис расчёта и сохранения кредитных запросов.
- *
- * <p>Сервис выполняет валидацию, сохраняет запрос
- * и выбирает подходящий калькулятор через фабрику.</p>
  */
 @Service
 public class CreditService {
@@ -38,32 +35,41 @@ public class CreditService {
      *
      * @param request параметры кредита
      * @return рассчитанный график платежей
-     * @throws IllegalArgumentException если запрос некорректен
      */
-    public CreditSchedule calculateAndSave(
-            CreditRequest request
-    ) {
+    public CreditSchedule calculateAndSave(CreditRequest request) {
         validator.validate(request);
 
-        CreditRequest requestToSave =
-                new CreditRequest(
-                        0L,
-                        request.telegramUserId(),
-                        request.amount(),
-                        request.termMonths(),
-                        request.annualRate(),
-                        request.paymentType(),
-                        LocalDateTime.now()
-                );
+        CreditRequest requestToSave = new CreditRequest(
+                0L,
+                request.telegramUserId(),
+                request.amount(),
+                request.termMonths(),
+                request.annualRate(),
+                request.paymentType(),
+                LocalDateTime.now()
+        );
 
-        CreditRequest savedRequest =
-                repository.save(requestToSave);
+        CreditRequest savedRequest = repository.save(requestToSave);
 
+        return calculate(savedRequest);
+    }
+
+    /**
+     * Рассчитывает график без сохранения запроса в историю.
+     *
+     * @param request параметры кредита
+     * @return рассчитанный график платежей
+     */
+    public CreditSchedule calculateWithoutSaving(CreditRequest request) {
+        validator.validate(request);
+
+        return calculate(request);
+    }
+
+    private CreditSchedule calculate(CreditRequest request) {
         PaymentCalculator calculator =
-                calculatorFactory.getCalculator(
-                        savedRequest.paymentType()
-                );
+                calculatorFactory.getCalculator(request.paymentType());
 
-        return calculator.calculate(savedRequest);
+        return calculator.calculate(request);
     }
 }

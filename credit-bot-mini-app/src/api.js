@@ -13,7 +13,9 @@ async function request(path, options = {}) {
         ...options,
 
         headers: {
-            ...(options.body ? { "Content-Type": "application/json" } : {}),
+            ...(options.body
+                ? { "Content-Type": "application/json" }
+                : {}),
             "X-Telegram-Init-Data": initData,
             ...options.headers,
         },
@@ -24,7 +26,7 @@ async function request(path, options = {}) {
     if (!response.ok) {
         throw new Error(
             body?.message ||
-            body?.detail||
+            body?.detail ||
             `Ошибка запроса: ${response.status}`
         );
     }
@@ -46,8 +48,25 @@ export function createCalculation(input) {
         body: JSON.stringify(input),
     });
 }
- export function loadManagerAnalytics(from,to){
-     const  params=new URLSearchParams({from,to});
-     return request(`/manager/analytics?&{params.toString}`);
- }
 
+export function compareCalculations(first, second) {
+    return request("/calculations/compare", {
+        method: "POST",
+        body: JSON.stringify({
+            first,
+            second,
+        }),
+    });
+}
+
+export function loadManagerAnalytics(from, to) {
+    const params = new URLSearchParams({ from, to });
+
+    return request(`/manager/analytics?${params.toString()}`);
+}
+
+export function deleteCalculation(id) {
+    return request(`/calculation/${id}`, {
+        method: "DELETE",
+    });
+}

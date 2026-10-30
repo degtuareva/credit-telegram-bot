@@ -6,12 +6,6 @@ import org.springframework.stereotype.Component;
 
 import java.math.BigDecimal;
 
-/**
- * Выполняет бизнес-валидацию кредитного запроса.
- *
- * <p>Класс проверяет Telegram ID пользователя, сумму,
- * срок, процентную ставку и тип платежа.</p>
- */
 @Component
 public class CreditRequestValidator {
 
@@ -30,12 +24,6 @@ public class CreditRequestValidator {
     private static final BigDecimal MAX_RATE =
             BigDecimal.valueOf(100);
 
-    /**
-     * Проверяет кредитный запрос.
-     *
-     * @param request проверяемый кредитный запрос
-     * @throws IllegalArgumentException если данные некорректны
-     */
     public void validate(CreditRequest request) {
         if (request == null) {
             throw new IllegalArgumentException(
@@ -85,8 +73,8 @@ public class CreditRequestValidator {
     }
 
     private void validateTerm(int termMonths) {
-        if (termMonths < MIN_TERM_MONTHS ||
-                termMonths > MAX_TERM_MONTHS) {
+        if (termMonths < MIN_TERM_MONTHS
+                || termMonths > MAX_TERM_MONTHS) {
             throw new IllegalArgumentException(
                     "Срок должен быть от 1 до 360 месяцев"
             );
@@ -100,8 +88,8 @@ public class CreditRequestValidator {
             );
         }
 
-        if (annualRate.compareTo(MIN_RATE) < 0 ||
-                annualRate.compareTo(MAX_RATE) > 0) {
+        if (annualRate.compareTo(MIN_RATE) < 0
+                || annualRate.compareTo(MAX_RATE) > 0) {
             throw new IllegalArgumentException(
                     "Ставка должна быть от 0 до 100 процентов"
             );

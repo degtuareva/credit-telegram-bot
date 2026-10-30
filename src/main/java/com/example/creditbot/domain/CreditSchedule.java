@@ -1,6 +1,7 @@
 package com.example.creditbot.domain;
 
 import java.math.BigDecimal;
+import java.util.Collection;
 import java.util.List;
 
 /**
