@@ -13,18 +13,20 @@ import java.util.List;
 public interface CreditRequestJpaRepository
         extends JpaRepository<CreditRequestEntity, Long> {
 
-    List<CreditRequestEntity> findByTelegramUserIdOrderByCreatedAtDesc(
-            Long telegramUserId
-    );
+    List<CreditRequestEntity>
+    findByTelegramUserIdOrderByCreatedAtDesc(Long telegramUserId);
 
     List<CreditRequestEntity> findByAmountBetweenAndPaymentType(
             BigDecimal minAmount,
             BigDecimal maxAmount,
             PaymentType paymentType
     );
+
     List<CreditRequestEntity>
     findByCreatedAtGreaterThanEqualAndCreatedAtLessThanOrderByCreatedAtAsc(
             LocalDateTime from,
             LocalDateTime toExclusive
     );
+
+    long deleteByIdAndTelegramUserId(Long id, Long telegramUserId);
 }

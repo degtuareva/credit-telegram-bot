@@ -72,4 +72,22 @@ public class InMemoryCreditRequestRepository
                 .filter(request -> request.id() == id)
                 .findFirst();
     }
+
+    @Override
+    public long deleteByTelegramUserIdAndId(
+            Long telegramUserId,
+            Long id
+    ) {
+        if ((telegramUserId==null) || (id==null)) {
+            return 0L;
+        }
+        long before = requests.size();
+
+        requests.removeIf(request ->
+                request.id()==id.longValue()
+                        && request.telegramUserId()==telegramUserId.longValue()
+        );
+
+        return before - requests.size();
+    }
 }

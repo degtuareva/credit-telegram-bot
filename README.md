@@ -1301,7 +1301,8 @@ PowerShell некорректно передал Maven-параметр.
 Используйте:
 
 ```powershell
-mvn spring-boot:run "-Dspring-boot.run.profiles=postgres"
+cd D:\repo\java\credit-telegram-bot\credit-bot-mini-app
+npm run dev
 ```
 
 ### `Process terminated with exit code: 1`
@@ -1534,7 +1535,8 @@ run-credit-bot.ps1
 *.log
 ```
 
-Решение о хранении сгенерированной React-сборки в `resources/static` принимается отдельно. В перспективе лучше собирать её автоматически в CI.
+Решение о хранении сгенерированной React-сборки в `resources/static` принимается отдельно. 
+В перспективе лучше собирать её автоматически в CI.
 
 ### Если секрет опубликован
 

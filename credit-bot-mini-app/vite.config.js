@@ -10,6 +10,7 @@ export default defineConfig({
 
     allowedHosts: [
       "jiffy-old-bubbly.ngrok-free.dev",
+        // "navigator-carriers-viewed-banner.trycloudflare.com",
     ],
 
     proxy: {

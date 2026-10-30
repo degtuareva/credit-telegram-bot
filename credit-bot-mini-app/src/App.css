@@ -328,4 +328,19 @@ footer {
   .section-heading {
     flex-wrap: wrap;
   }
+  .comparison form {
+    display: grid;
+    gap: 16px;
+  }
+
+  @media (min-width: 720px) {
+    .comparison form {
+      grid-template-columns: 1fr 1fr;
+      align-items: start;
+    }
+
+    .comparison form button {
+      grid-column: 1 / -1;
+    }
+  }
 }

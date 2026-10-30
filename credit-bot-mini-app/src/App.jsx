@@ -2,10 +2,13 @@ import { useEffect, useState } from "react";
 import ManagerAnalytics from "./ManagerAnalytics.jsx";
 import {
     createCalculation,
+    deleteCalculation,
     loadHistory,
     loadMe,
 } from "./api";
+
 import "./App.css";
+import LoanComparison from "./LoanComparison.jsx";
 
 const moneyFormatter = new Intl.NumberFormat("ru-RU", {
     style: "currency",
@@ -126,6 +129,25 @@ export default function App() {
             setLoading(false);
         }
     }
+    async function removeCalculation(id) {
+        setError("");
+        setNotice("");
+        setLoading(true);
+
+        try {
+            await deleteCalculation(id);
+
+            setHistory((current) =>
+                current.filter((item) => item.id !== id)
+            );
+
+            setNotice("Расчёт удалён.");
+        } catch (exception) {
+            setError(exception.message);
+        } finally {
+            setLoading(false);
+        }
+    }
 
     return (
         <main className="app">
@@ -179,12 +201,26 @@ export default function App() {
 
                 <button
                     type="button"
+                    className={tab === "comparison" ? "active" : ""}
+                    disabled={loading}
+                    onClick={() => {
+                        setTab("comparison");
+                        setError("");
+                        setNotice("");
+                    }}
+                >
+                    Сравнение
+                </button>
+
+                <button
+                    type="button"
                     className={tab === "history" ? "active" : ""}
                     disabled={!user || loading}
                     onClick={showHistory}
                 >
                     История
                 </button>
+
                 {user?.manager && (
                     <button
                         type="button"
@@ -355,12 +391,23 @@ export default function App() {
                                     <p className="muted">
                                         {String(item.createdAt ?? "").replace("T", " ")}
                                     </p>
+                                    <button
+                                        type="button"
+                                        disabled={loading || !user}
+                                        onClick={() => removeCalculation(item.id)}
+                                    >
+                                        Удалить
+                                    </button>
                                 </article>
                             ))}
                         </div>
                     )}
                 </section>
             )}
+            {tab === "comparison" && (
+                <LoanComparison />
+            )}
+
             {tab === "analytics" && user?.manager && (
                 <ManagerAnalytics />
             )}

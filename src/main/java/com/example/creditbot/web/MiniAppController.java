@@ -3,13 +3,17 @@ package com.example.creditbot.web;
 import com.example.creditbot.domain.CreditRequest;
 import com.example.creditbot.domain.CreditSchedule;
 import com.example.creditbot.security.ManagerAuthService;
+import com.example.creditbot.service.CalculationComparisonService;
 import com.example.creditbot.service.CreditService;
 import com.example.creditbot.service.HistoryService;
+import com.example.creditbot.web.dto.CalculationComparisonRequest;
+import com.example.creditbot.web.dto.CalculationComparisonResponse;
 import com.example.creditbot.web.dto.CalculationRequest;
 import com.example.creditbot.web.dto.MiniAppResponse;
 import com.example.creditbot.web.security.TelegramInitDataService;
 import com.example.creditbot.web.security.TelegramUser;
 import jakarta.validation.Valid;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.time.LocalDateTime;
@@ -24,17 +28,20 @@ public class MiniAppController {
     private final HistoryService historyService;
     private final TelegramInitDataService authService;
     private final ManagerAuthService managerAuthService;
+    private final CalculationComparisonService comparisonService;
 
     public MiniAppController(
             CreditService creditService,
             HistoryService historyService,
             TelegramInitDataService authService,
-            ManagerAuthService managerAuthService
+            ManagerAuthService managerAuthService,
+            CalculationComparisonService comparisonService
     ) {
         this.creditService = creditService;
         this.historyService = historyService;
         this.authService = authService;
         this.managerAuthService = managerAuthService;
+        this.comparisonService = comparisonService;
     }
 
     @GetMapping("/me")
@@ -44,18 +51,18 @@ public class MiniAppController {
                     required = false
             ) String initData
     ) {
-       TelegramUser user=authService.authenticate(initData);
-       boolean manager=
-               managerAuthService.isAllowedManager(user.id());
+        TelegramUser user = authService.authenticate(initData);
 
-       return new MiniAppResponse(
-               user.id(),
-               user.firstName(),
-               user.username(),
-               manager,
-               manager&&managerAuthService.isAuthenticated(user.id())
-       );
+        boolean manager =
+                managerAuthService.isAllowedManager(user.id());
 
+        return new MiniAppResponse(
+                user.id(),
+                user.firstName(),
+                user.username(),
+                manager,
+                manager && managerAuthService.isAuthenticated(user.id())
+        );
     }
 
     @PostMapping("/calculations")
@@ -98,5 +105,36 @@ public class MiniAppController {
                 )
                 .limit(50)
                 .toList();
+    }
+
+    @PostMapping("/calculations/compare")
+    public CalculationComparisonResponse compare(
+            @RequestHeader(
+                    value = "X-Telegram-Init-Data",
+                    required = false
+            ) String initData,
+            @Valid @RequestBody CalculationComparisonRequest request
+    ) {
+       TelegramUser user= authService.authenticate(initData);
+
+        return comparisonService.compare(
+                user.id(),
+                request
+        );
+    }
+
+    @DeleteMapping("/calculation/{id}")
+    public ResponseEntity<Void> deleteCalculation(
+            @PathVariable Long id,
+            @RequestHeader(
+                    value = "X-Telegram-Init-Data",
+                    required = false
+            ) String initData
+    ) {
+        TelegramUser user = authService.authenticate(initData);
+
+        historyService.deleteUserCalculation(user.id(), id);
+
+        return ResponseEntity.noContent().build();
     }
 }
