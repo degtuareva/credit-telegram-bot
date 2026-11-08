@@ -5,11 +5,9 @@ import com.example.creditbot.domain.CreditSchedule;
 import com.example.creditbot.security.ManagerAuthService;
 import com.example.creditbot.service.CalculationComparisonService;
 import com.example.creditbot.service.CreditService;
+import com.example.creditbot.service.EarlyRepaymentService;
 import com.example.creditbot.service.HistoryService;
-import com.example.creditbot.web.dto.CalculationComparisonRequest;
-import com.example.creditbot.web.dto.CalculationComparisonResponse;
-import com.example.creditbot.web.dto.CalculationRequest;
-import com.example.creditbot.web.dto.MiniAppResponse;
+import com.example.creditbot.web.dto.*;
 import com.example.creditbot.web.security.TelegramInitDataService;
 import com.example.creditbot.web.security.TelegramUser;
 import jakarta.validation.Valid;
@@ -29,19 +27,22 @@ public class MiniAppController {
     private final TelegramInitDataService authService;
     private final ManagerAuthService managerAuthService;
     private final CalculationComparisonService comparisonService;
+    private final EarlyRepaymentService earlyRepaymentService;
 
     public MiniAppController(
             CreditService creditService,
             HistoryService historyService,
             TelegramInitDataService authService,
             ManagerAuthService managerAuthService,
-            CalculationComparisonService comparisonService
+            CalculationComparisonService comparisonService,
+            EarlyRepaymentService earlyRepaymentService
     ) {
         this.creditService = creditService;
         this.historyService = historyService;
         this.authService = authService;
         this.managerAuthService = managerAuthService;
         this.comparisonService = comparisonService;
+        this.earlyRepaymentService = earlyRepaymentService;
     }
 
     @GetMapping("/me")
@@ -136,5 +137,17 @@ public class MiniAppController {
         historyService.deleteUserCalculation(user.id(), id);
 
         return ResponseEntity.noContent().build();
+    }
+
+    @PostMapping("/calculations/early-repayment")
+    public EarlyRepaymentResponse earlyRepayment(
+            @RequestHeader(
+                    value = "X-Telegram-Init-Data",
+                    required = false
+            )String initData,
+            @Valid @RequestBody EarlyRepaymentRequest request
+    ){
+        authService.authenticate(initData);
+        return earlyRepaymentService.calculate(request);
     }
 }

@@ -70,3 +70,9 @@ export function deleteCalculation(id) {
         method: "DELETE",
     });
 }
+export function calculateEarlyRepayment(input){
+    return request("/calculations/early-repayment",{
+        method:"POST",
+        body:JSON.stringify(input),
+    });
+}

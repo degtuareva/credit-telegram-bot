@@ -1,5 +1,7 @@
 import { useEffect, useState } from "react";
 import ManagerAnalytics from "./ManagerAnalytics.jsx";
+import EarlyRepayment from "./EarlyRepayment.jsx";
+
 import {
     createCalculation,
     deleteCalculation,
@@ -235,6 +237,19 @@ export default function App() {
                         Аналитика
                     </button>
                 )}
+
+                <button
+                    type="button"
+                    className={tab==="early"?"active":""}
+                    disabled={loading}
+                    onClick={()=>{
+                        setTab("early");
+                        setError("");
+                        setNotice("");
+                    }}
+                    >
+                    Досрочно
+                </button>
             </nav>
 
             {tab === "calculator" && (
@@ -410,6 +425,10 @@ export default function App() {
 
             {tab === "analytics" && user?.manager && (
                 <ManagerAnalytics />
+            )}
+
+            {tab==="early"&&(
+                <EarlyRepayment/>
             )}
 
             <footer className="muted">
