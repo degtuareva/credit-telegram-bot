@@ -1,10 +1,12 @@
 import { useEffect, useState } from "react";
 import ManagerAnalytics from "./ManagerAnalytics.jsx";
 import EarlyRepayment from "./EarlyRepayment.jsx";
+import Login from "./Login.jsx";
 
 import {
     createCalculation,
     deleteCalculation,
+    getToken,
     loadHistory,
     loadMe,
 } from "./api";
@@ -60,6 +62,17 @@ export default function App() {
         let active = true;
 
         async function initialize() {
+            const hasTelegramData = Boolean(
+                window.Telegram?.WebApp?.initData
+            );
+
+            if (!hasTelegramData && !getToken()) {
+                if (active) {
+                    setAuthLoading(false);
+                }
+
+                return;
+            }
             try {
                 const currentUser = await loadMe();
 
@@ -131,6 +144,7 @@ export default function App() {
             setLoading(false);
         }
     }
+
     async function removeCalculation(id) {
         setError("");
         setNotice("");
@@ -144,6 +158,64 @@ export default function App() {
             );
 
             setNotice("Расчёт удалён.");
+        } catch (exception) {
+            setError(exception.message);
+        } finally {
+            setLoading(false);
+        }
+    }
+
+    function repeatCalculation(item) {
+        setForm({
+            amount: String(item.amount),
+            termMonths: String(item.termMonths),
+            annualRate: String(item.annualRate),
+            paymentType: item.paymentType,
+        });
+
+        setTab("calculator");
+        setSchedule(null);
+        setNotice("Параметры прошлого расчёта подставлены.");
+    }
+
+    async function exportHistory() {
+        setError("");
+        setNotice("");
+        setLoading(true);
+
+        try {
+            const token = getToken();
+
+            if (!token) {
+                throw new Error("Требуется вход в аккаунт.");
+            }
+
+            const response = await fetch(
+                "/api/mini-app/history/export",
+                {
+                    headers: {
+                        Authorization: `Bearer ${token}`,
+                    },
+                }
+            );
+
+            if (!response.ok) {
+                throw new Error(
+                    `Не удалось скачать файл: ${response.status}`
+                );
+            }
+
+            const blob = await response.blob();
+            const url = URL.createObjectURL(blob);
+
+            const link = document.createElement("a");
+            link.href = url;
+            link.download = "credit-history.csv";
+            link.click();
+
+            URL.revokeObjectURL(url);
+
+            setNotice("История сохранена в CSV.");
         } catch (exception) {
             setError(exception.message);
         } finally {
@@ -166,7 +238,7 @@ export default function App() {
             </header>
 
             {authLoading && (
-                <p className="status">Проверяем вход через Telegram…</p>
+                <p className="status">Проверяем вход…</p>
             )}
 
             {error && (
@@ -182,13 +254,13 @@ export default function App() {
             )}
 
             {!authLoading && !user && (
-                <section className="card">
-                    <h2>Вход через Telegram</h2>
-                    <p>
-                        Интерфейс открыт, но защищённые данные недоступны.
-                        Запустите приложение через кнопку меню бота.
-                    </p>
-                </section>
+                <Login
+                    onSuccess={(currentUser) => {
+                        setUser(currentUser);
+                        setError("");
+                        setNotice("Вы вошли в приложение.");
+                    }}
+                />
             )}
 
             <nav className="tabs" aria-label="Разделы приложения">
@@ -240,14 +312,14 @@ export default function App() {
 
                 <button
                     type="button"
-                    className={tab==="early"?"active":""}
+                    className={tab === "early" ? "active" : ""}
                     disabled={loading}
-                    onClick={()=>{
+                    onClick={() => {
                         setTab("early");
                         setError("");
                         setNotice("");
                     }}
-                    >
+                >
                     Досрочно
                 </button>
             </nav>
@@ -314,7 +386,9 @@ export default function App() {
                             type="submit"
                             disabled={!user || loading}
                         >
-                            {loading ? "Рассчитываем…" : "Рассчитать и сохранить"}
+                            {loading
+                                ? "Рассчитываем…"
+                                : "Рассчитать и сохранить"}
                         </button>
                     </form>
 
@@ -325,12 +399,16 @@ export default function App() {
                             <div className="summary">
                                 <div>
                                     <span>Переплата</span>
-                                    <strong>{money(schedule.totalInterest)}</strong>
+                                    <strong>
+                                        {money(schedule.totalInterest)}
+                                    </strong>
                                 </div>
 
                                 <div>
                                     <span>Общая выплата</span>
-                                    <strong>{money(schedule.totalPayment)}</strong>
+                                    <strong>
+                                        {money(schedule.totalPayment)}
+                                    </strong>
                                 </div>
                             </div>
 
@@ -349,15 +427,35 @@ export default function App() {
                                     </thead>
 
                                     <tbody>
-                                    {(schedule.payments ?? []).map((payment) => (
-                                        <tr key={payment.month}>
-                                            <td>{payment.month}</td>
-                                            <td>{money(payment.totalPayment)}</td>
-                                            <td>{money(payment.principal)}</td>
-                                            <td>{money(payment.interest)}</td>
-                                            <td>{money(payment.remainingDebt)}</td>
-                                        </tr>
-                                    ))}
+                                    {(schedule.payments ?? []).map(
+                                        (payment) => (
+                                            <tr key={payment.month}>
+                                                <td>
+                                                    {payment.month}
+                                                </td>
+                                                <td>
+                                                    {money(
+                                                        payment.totalPayment
+                                                    )}
+                                                </td>
+                                                <td>
+                                                    {money(
+                                                        payment.principal
+                                                    )}
+                                                </td>
+                                                <td>
+                                                    {money(
+                                                        payment.interest
+                                                    )}
+                                                </td>
+                                                <td>
+                                                    {money(
+                                                        payment.remainingDebt
+                                                    )}
+                                                </td>
+                                            </tr>
+                                        )
+                                    )}
                                     </tbody>
                                 </table>
                             </div>
@@ -398,27 +496,58 @@ export default function App() {
                                     <h3>{money(item.amount)}</h3>
 
                                     <p>
-                                        {item.termMonths} мес. · {item.annualRate}%
+                                        {item.termMonths} мес. ·{" "}
+                                        {item.annualRate}%
                                     </p>
 
-                                    <p>{paymentTypeLabel(item.paymentType)}</p>
+                                    <p>
+                                        {paymentTypeLabel(
+                                            item.paymentType
+                                        )}
+                                    </p>
 
                                     <p className="muted">
-                                        {String(item.createdAt ?? "").replace("T", " ")}
+                                        {String(item.createdAt ?? "")
+                                            .replace("T", " ")}
                                     </p>
-                                    <button
-                                        type="button"
-                                        disabled={loading || !user}
-                                        onClick={() => removeCalculation(item.id)}
-                                    >
-                                        Удалить
-                                    </button>
+
+                                    <div className="history-actions">
+                                        <button
+                                            type="button"
+                                            disabled={loading || !user}
+                                            onClick={() =>
+                                                repeatCalculation(item)
+                                            }
+                                        >
+                                            Повторить
+                                        </button>
+
+                                        <button
+                                            type="button"
+                                            disabled={loading || !user}
+                                            onClick={() =>
+                                                removeCalculation(item.id)
+                                            }
+                                        >
+                                            Удалить
+                                        </button>
+                                    </div>
                                 </article>
                             ))}
                         </div>
                     )}
+
+                    <button
+                        className="primary"
+                        type="button"
+                        disabled={loading || !user}
+                        onClick={exportHistory}
+                    >
+                        Скачать CSV
+                    </button>
                 </section>
             )}
+
             {tab === "comparison" && (
                 <LoanComparison />
             )}
@@ -427,8 +556,8 @@ export default function App() {
                 <ManagerAnalytics />
             )}
 
-            {tab==="early"&&(
-                <EarlyRepayment/>
+            {tab === "early" && (
+                <EarlyRepayment />
             )}
 
             <footer className="muted">

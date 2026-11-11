@@ -4,13 +4,15 @@ server:
 mini-app:
   auth:
     max-age-seconds: 3600
+
 spring:
   profiles:
     active: postgres
+
   datasource:
     url: jdbc:postgresql://localhost:5432/credit_bot
-    username: 
-    password:
+    username: ${DB_USERNAME:postgres}
+    password: ${DB_PASSWORD:root}
     driver-class-name: org.postgresql.Driver
 
   jpa:
@@ -29,6 +31,9 @@ telegram:
   bot:
     username: credit_olga_telegram_bot
     token: ${TELEGRAM_BOT_TOKEN}
-
   manager-password: ${TELEGRAM_MANAGER_PASSWORD:}
   manager-ids: ${TELEGRAM_MANAGER_IDS:}
+
+jwt:
+  secret: ${JWT_SECRET}
+  expiration-ms: 86400000
