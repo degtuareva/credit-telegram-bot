@@ -5,17 +5,18 @@ import com.example.creditbot.domain.CreditSchedule;
 import com.example.creditbot.security.ManagerAuthService;
 import com.example.creditbot.service.CalculationComparisonService;
 import com.example.creditbot.service.CreditService;
+import com.example.creditbot.service.EarlyRepaymentService;
 import com.example.creditbot.service.HistoryService;
-import com.example.creditbot.web.dto.CalculationComparisonRequest;
-import com.example.creditbot.web.dto.CalculationComparisonResponse;
-import com.example.creditbot.web.dto.CalculationRequest;
-import com.example.creditbot.web.dto.MiniAppResponse;
-import com.example.creditbot.web.security.TelegramInitDataService;
+import com.example.creditbot.web.dto.*;
 import com.example.creditbot.web.security.TelegramUser;
+import com.example.creditbot.web.security.UnifiedAuthService;
 import jakarta.validation.Valid;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.nio.charset.StandardCharsets;
 import java.time.LocalDateTime;
 import java.util.Comparator;
 import java.util.List;
@@ -26,22 +27,25 @@ public class MiniAppController {
 
     private final CreditService creditService;
     private final HistoryService historyService;
-    private final TelegramInitDataService authService;
+    private final UnifiedAuthService authService;
     private final ManagerAuthService managerAuthService;
     private final CalculationComparisonService comparisonService;
+    private final EarlyRepaymentService earlyRepaymentService;
 
     public MiniAppController(
             CreditService creditService,
             HistoryService historyService,
-            TelegramInitDataService authService,
+            UnifiedAuthService authService,
             ManagerAuthService managerAuthService,
-            CalculationComparisonService comparisonService
+            CalculationComparisonService comparisonService,
+            EarlyRepaymentService earlyRepaymentService
     ) {
         this.creditService = creditService;
         this.historyService = historyService;
         this.authService = authService;
         this.managerAuthService = managerAuthService;
         this.comparisonService = comparisonService;
+        this.earlyRepaymentService = earlyRepaymentService;
     }
 
     @GetMapping("/me")
@@ -49,19 +53,25 @@ public class MiniAppController {
             @RequestHeader(
                     value = "X-Telegram-Init-Data",
                     required = false
-            ) String initData
+            ) String initData,
+            @RequestHeader(
+                    value = "Authorization",
+                    required = false
+            ) String authorization
     ) {
-        TelegramUser user = authService.authenticate(initData);
+        Long userId = authService.resolveUserId(
+                initData,
+                authorization
+        );
 
-        boolean manager =
-                managerAuthService.isAllowedManager(user.id());
+        boolean manager = managerAuthService.isAllowedManager(userId);
 
         return new MiniAppResponse(
-                user.id(),
-                user.firstName(),
-                user.username(),
+                userId,
+                null,
+                null,
                 manager,
-                manager && managerAuthService.isAuthenticated(user.id())
+                manager && managerAuthService.isAuthenticated(userId)
         );
     }
 
@@ -71,13 +81,20 @@ public class MiniAppController {
                     value = "X-Telegram-Init-Data",
                     required = false
             ) String initData,
+            @RequestHeader(
+                    value = "Authorization",
+                    required = false
+            ) String authorization,
             @Valid @RequestBody CalculationRequest input
     ) {
-        TelegramUser user = authService.authenticate(initData);
+        Long userId = authService.resolveUserId(
+                initData,
+                authorization
+        );
 
         CreditRequest request = new CreditRequest(
                 0L,
-                user.id(),
+                userId,
                 input.amount(),
                 input.termMonths(),
                 input.annualRate(),
@@ -93,11 +110,18 @@ public class MiniAppController {
             @RequestHeader(
                     value = "X-Telegram-Init-Data",
                     required = false
-            ) String initData
+            ) String initData,
+            @RequestHeader(
+                    value = "Authorization",
+                    required = false
+            ) String authorization
     ) {
-        TelegramUser user = authService.authenticate(initData);
+        Long userId = authService.resolveUserId(
+                initData,
+                authorization
+        );
 
-        return historyService.getUserHistory(user.id())
+        return historyService.getUserHistory(userId)
                 .stream()
                 .sorted(
                         Comparator.comparing(CreditRequest::createdAt)
@@ -113,12 +137,19 @@ public class MiniAppController {
                     value = "X-Telegram-Init-Data",
                     required = false
             ) String initData,
+            @RequestHeader(
+                    value = "Authorization",
+                    required = false
+            ) String authorization,
             @Valid @RequestBody CalculationComparisonRequest request
     ) {
-       TelegramUser user= authService.authenticate(initData);
+        Long userId = authService.resolveUserId(
+                initData,
+                authorization
+        );
 
         return comparisonService.compare(
-                user.id(),
+                userId,
                 request
         );
     }
@@ -129,12 +160,85 @@ public class MiniAppController {
             @RequestHeader(
                     value = "X-Telegram-Init-Data",
                     required = false
-            ) String initData
+            ) String initData,
+            @RequestHeader(
+                    value = "Authorization",
+                    required = false
+            ) String authorization
     ) {
-        TelegramUser user = authService.authenticate(initData);
+        Long userId = authService.resolveUserId(
+                initData,
+                authorization
+        );
 
-        historyService.deleteUserCalculation(user.id(), id);
+        historyService.deleteUserCalculation(userId, id);
 
         return ResponseEntity.noContent().build();
+    }
+
+    @PostMapping("/calculations/early-repayment")
+    public EarlyRepaymentResponse earlyRepayment(
+            @RequestHeader(
+                    value = "X-Telegram-Init-Data",
+                    required = false
+            ) String initData,
+            @RequestHeader(
+                    value = "Authorization",
+                    required = false
+            ) String authorization,
+            @Valid @RequestBody EarlyRepaymentRequest request
+    ) {
+        Long userId = authService.resolveUserId(
+                initData,
+                authorization
+        );
+
+        return earlyRepaymentService.calculate(
+                userId,
+                request
+        );
+    }
+
+    @GetMapping("/history/export")
+    public ResponseEntity<byte[]> exportHistory(
+            @RequestHeader(
+                    value = "X-Telegram-Init-Data",
+                    required = false
+            ) String initData,
+            @RequestHeader(
+                    value = "Authorization",
+                    required = false
+            ) String authorization
+    ) {
+        Long userId = authService.resolveUserId(
+                initData,
+                authorization
+        );
+
+        List<CreditRequest> history =
+                historyService.getUserHistory(userId);
+
+        StringBuilder csv = new StringBuilder();
+        csv.append("id;amount;term_months;annual_rate;payment_type;created_at\n");
+
+        for (CreditRequest item : history) {
+            csv.append(item.id()).append(";")
+                    .append(item.amount()).append(";")
+                    .append(item.termMonths()).append(";")
+                    .append(item.annualRate()).append(";")
+                    .append(item.paymentType()).append(";")
+                    .append(item.createdAt()).append("\n");
+        }
+
+        byte[] content = csv.toString()
+                .getBytes(StandardCharsets.UTF_8);
+
+        return ResponseEntity.ok()
+                .header(
+                        HttpHeaders.CONTENT_DISPOSITION,
+                        "attachment; filename=credit-history.csv"
+                )
+                .contentType(MediaType.parseMediaType("text/csv"))
+                .body(content);
     }
 }

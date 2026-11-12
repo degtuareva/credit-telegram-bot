@@ -5,3 +5,7 @@ telegram:
 
   manager-password: ${MANAGER_PASSWORD}
   manager-ids: ${MANAGER_IDS:}
+
+jwt:
+  secret: local-dev-secret-key-change-me-32-characters-minimum
+  expiration-ms: 86400000
